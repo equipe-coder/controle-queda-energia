@@ -159,6 +159,11 @@ alter table public.prospectadores replica identity full;
 alter table public.config replica identity full;
 alter table public.equipe replica identity full;
 
+-- Permissões de acesso pela API (as regras acima decidem o que cada um vê)
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on public.equipe, public.clientes, public.prospectadores, public.config to authenticated;
+revoke all on public.equipe, public.clientes, public.prospectadores, public.config from anon;
+
 -- ---------------------------------------------------------------
 -- Primeiro administrador
 -- ---------------------------------------------------------------

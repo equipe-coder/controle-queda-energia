@@ -2,6 +2,6 @@
 // A chave "anon"/"publishable" pode ficar aqui: quem protege os dados são as regras de acesso do banco.
 // NUNCA coloque aqui a chave "service_role".
 window.QE_CONFIG = {
-  url: 'COLE_AQUI_A_PROJECT_URL',
-  key: 'COLE_AQUI_A_CHAVE_PUBLICA'
+  url: 'https://etmknidodbmtpvbzgvhp.supabase.co',
+  key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r'
 };

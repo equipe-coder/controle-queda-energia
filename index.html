@@ -877,7 +877,9 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     if (fut.length){
       var first = dates[0], last = dates[dates.length - 1];
       $('s-aud-c').textContent = (first === last ? fmtShort(first) : fmtShort(first) + ' a ' + fmtShort(last)) + ' · próxima ' + relLabel(daysUntil(first));
-      $('v-aud').innerHTML = ''; // the per-day split is already in the Pauta por dia section below
+      // who is in charge of notifying (the per-day split already shows in Pauta por dia)
+      var comP = fut.filter(function(r){ return prospName(r.responsavelId); }).length;
+      $('v-aud').innerHTML = stackBar([{ l: 'Com prospectador', n: comP, c: cssVar('--amber') }, { l: 'Sem prospectador', n: fut.length - comP, c: cssVar('--line-2') }]);
     } else { $('s-aud-c').textContent = 'Nenhuma audiência futura'; $('v-aud').innerHTML = ''; }
 
     $('s-avis').textContent = avis.length;

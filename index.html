@@ -196,8 +196,6 @@ header.top h1{margin:3px 0 0;font-size:24px;line-height:1.2;font-weight:700;lett
 .bar span{display:block;height:100%}
 .legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11.5px;color:var(--ink-3);margin:0 14px 8px}
 .legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px;vertical-align:0}
-#v-aud .legend{flex-wrap:nowrap;gap:8px;white-space:nowrap;overflow:hidden}
-#v-aud .legend i{margin-right:3px}
 
 .stats.five{grid-template-columns:repeat(5,minmax(0,1fr))}
 .stats.three{grid-template-columns:repeat(3,minmax(0,1fr))}
@@ -879,12 +877,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     if (fut.length){
       var first = dates[0], last = dates[dates.length - 1];
       $('s-aud-c').textContent = (first === last ? fmtShort(first) : fmtShort(first) + ' a ' + fmtShort(last)) + ' · próxima ' + relLabel(daysUntil(first));
-      // same legend + bar as the other cards: hearings per day (shades of blue), extra days grouped
-      var counts = {}; fut.forEach(function(r){ counts[r.audData] = (counts[r.audData] || 0) + 1; });
-      var dias = Object.keys(counts).sort(), blue = cssVar('--blue'), tons = [100, 72, 48, 28];
-      var partsAud = dias.slice(0, 4).map(function(d, k){ return { l: fmtShort(d), n: counts[d], c: 'color-mix(in srgb, ' + blue + ' ' + tons[k] + '%, transparent)' }; });
-      if (dias.length > 4) partsAud.push({ l: 'Outros dias', n: dias.slice(4).reduce(function(t, d){ return t + counts[d]; }, 0), c: cssVar('--line-2') });
-      $('v-aud').innerHTML = stackBar(partsAud);
+      $('v-aud').innerHTML = ''; // the per-day split is already in the Pauta por dia section below
     } else { $('s-aud-c').textContent = 'Nenhuma audiência futura'; $('v-aud').innerHTML = ''; }
 
     $('s-avis').textContent = avis.length;

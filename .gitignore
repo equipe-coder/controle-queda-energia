@@ -1,0 +1,10 @@
+# Dados de clientes nunca vão para o repositório
+*.xlsx
+*.csv
+importacao/
+*dados*.sql
+.env
+.env.*
+.vercel
+node_modules/
+.claude/

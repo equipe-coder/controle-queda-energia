@@ -42,6 +42,11 @@ body{margin:0}
 .auth-card h1{margin:0;font-size:20px;letter-spacing:-.01em;text-wrap:balance}
 .auth-card form{display:flex;flex-direction:column;gap:12px}
 .auth-card .field input{width:100%}
+.pw{position:relative}
+.pw input{padding-right:44px}
+.pw-eye{position:absolute;right:4px;top:50%;transform:translateY(-50%);border:0;background:none;padding:6px;border-radius:6px;color:var(--ink-3);display:flex}
+.pw-eye:hover{color:var(--ink);background:var(--hover)}
+.pw-eye svg.i{width:18px;height:18px}
 .auth-card .btn.primary{justify-content:center;padding:10px 13px}
 .auth-links{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px}
 .linkbtn{border:0;background:none;padding:0;color:var(--blue);font-weight:600;font-size:inherit}
@@ -381,6 +386,8 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9"/></symbol>
   <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
   <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-eyeoff" viewBox="0 0 24 24"><path d="M10.6 5.1A10.5 10.5 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-2.9 3.9M6.6 6.6A17.4 17.4 0 0 0 2 12s3.6 7 10 7a9.8 9.8 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2M3 3l18 18"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="i-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
   <symbol id="i-filter" viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></symbol>
@@ -401,8 +408,8 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     <form id="auth-form" novalidate>
       <p class="auth-msg" id="auth-intro">Entre com o e-mail e a senha cadastrados.</p>
       <div class="field" id="af-email-wrap"><label for="af-email">E-mail</label><input id="af-email" type="email" autocomplete="username" inputmode="email"></div>
-      <div class="field" id="af-senha-wrap"><label for="af-senha">Senha</label><input id="af-senha" type="password" autocomplete="current-password"></div>
-      <div class="field" id="af-senha2-wrap" hidden><label for="af-senha2">Repita a senha</label><input id="af-senha2" type="password" autocomplete="new-password"></div>
+      <div class="field" id="af-senha-wrap"><label for="af-senha">Senha</label><div class="pw"><input id="af-senha" type="password" autocomplete="current-password"><button type="button" class="pw-eye" data-pw="af-senha" aria-label="Mostrar senha" title="Mostrar senha"><svg class="i"><use href="#i-eye"/></svg></button></div></div>
+      <div class="field" id="af-senha2-wrap" hidden><label for="af-senha2">Repita a senha</label><div class="pw"><input id="af-senha2" type="password" autocomplete="new-password"><button type="button" class="pw-eye" data-pw="af-senha2" aria-label="Mostrar senha" title="Mostrar senha"><svg class="i"><use href="#i-eye"/></svg></button></div></div>
       <button class="btn primary" type="submit" id="af-go">Entrar</button>
       <p class="auth-msg" id="auth-msg" role="status"></p>
       <div class="auth-links" id="auth-links">
@@ -1803,6 +1810,15 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     $('af-sair').hidden = mode !== 'bloqueado';
     authMsg('');
   }
+  $('auth-form').addEventListener('click', function(e){
+    var b = e.target.closest('[data-pw]'); if (!b) return;
+    var mostrar = $(b.dataset.pw).type === 'password';
+    ['af-senha', 'af-senha2'].forEach(function(id){ $(id).type = mostrar ? 'text' : 'password'; });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-pw]'), function(x){
+      x.querySelector('use').setAttribute('href', mostrar ? '#i-eyeoff' : '#i-eye');
+      x.setAttribute('aria-label', mostrar ? 'Esconder senha' : 'Mostrar senha'); x.title = x.getAttribute('aria-label');
+    });
+  });
   $('auth-links').addEventListener('click', function(e){ var b = e.target.closest('[data-mode]'); if (b) showAuth(b.dataset.mode); });
   function sair(){ SB.auth.signOut().finally(function(){ location.replace(location.pathname); }); }
   $('af-sair').addEventListener('click', sair);

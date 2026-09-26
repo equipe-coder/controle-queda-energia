@@ -121,6 +121,7 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .btn.primary:hover{opacity:.9}
 .btn.danger{color:var(--red);border-color:var(--red)}
 .btn.danger.armed{background:var(--red);color:#fff}
+.btn.primary.armed{background:var(--amber);border-color:var(--amber);color:#fff}
 
 /* ---------- filters ---------- */
 .filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
@@ -271,6 +272,10 @@ header.top h1{margin:3px 0 0;font-size:24px;line-height:1.2;font-weight:700;lett
 .ls-parts{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--ink-2)}
 .ls-parts span{display:inline-flex;align-items:center;gap:6px}
 .conv-btn{margin-left:auto;padding:6px 12px;font-size:12.5px}
+.wa-btn{padding:6px 12px;font-size:12.5px}
+.wa-log{max-height:180px;overflow:auto;font-size:12.5px;background:var(--soft);border:1px solid var(--line);border-radius:9px;padding:8px 10px;white-space:pre-wrap}
+.wa-prev{white-space:pre-wrap;font-size:13px;background:var(--soft);border:1px solid var(--line);border-radius:9px;padding:10px 12px}
+#wa-modelo{width:100%;min-height:170px;font-size:13px;line-height:1.45}
 .conv-info{background:var(--blue-soft);color:var(--ink);border-radius:9px;padding:10px 12px;font-size:13px;line-height:1.45}
 .check-line{display:flex;align-items:center;gap:8px;font-weight:500 !important;color:var(--ink) !important}
 .check-line input{width:16px;height:16px;accent-color:var(--blue)}
@@ -682,6 +687,28 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
 
 
 
+<dialog id="dlg-whats">
+  <form class="f" id="form-whats" novalidate>
+    <div class="f-head"><div class="ph-tile" style="margin:0"><svg class="i"><use href="#i-bell"/></svg></div><h2>Lembrete de audiência por WhatsApp</h2></div>
+    <div class="f-body">
+      <div class="field full"><div class="conv-info" id="wa-info"></div></div>
+      <div class="field full"><label for="wa-conexao">Número que envia (LiderHub, workspace Pós-venda)</label><select id="wa-conexao"><option value="">Carregando conexões…</option></select><span class="hint" id="wa-conexao-hint"></span></div>
+      <div class="field full"><label for="wa-modelo">Mensagem</label><textarea id="wa-modelo"></textarea><span class="hint">{nome} vira o nome do cliente e {audiencia} vira a data e o horário (30 minutos antes do horário real, como no convite).</span></div>
+      <div class="field full"><label>Como fica para o primeiro cliente</label><div class="wa-prev" id="wa-prev"></div></div>
+      <div class="field"><label for="wa-intervalo">Intervalo entre mensagens</label><select id="wa-intervalo"><option value="15">15 segundos</option><option value="30" selected>30 segundos</option><option value="60">1 minuto</option></select><span class="hint" id="wa-duracao"></span></div>
+      <div class="field"><label for="wa-teste">Seu WhatsApp para teste</label><input id="wa-teste" inputmode="tel" placeholder="(97) 00000-0000" class="tnum"><span class="hint">Recebe a mensagem do primeiro cliente, só para conferir.</span></div>
+      <div class="field full" id="wa-log-wrap" hidden><label>Andamento</label><div class="wa-log" id="wa-log" role="status"></div></div>
+    </div>
+    <div class="f-foot">
+      <button class="btn" type="button" id="wa-teste-go">Enviar teste</button>
+      <div class="right">
+        <button class="btn" type="button" id="wa-cancel">Fechar</button>
+        <button class="btn primary" type="submit" id="wa-go">Enviar</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="dlg-eq">
   <form class="f" id="form-eq" novalidate>
     <div class="f-head"><div class="ph-tile" style="margin:0"><svg class="i"><use href="#i-users"/></svg></div><h2 id="fe-title">Novo funcionário</h2></div>
@@ -962,6 +989,11 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       '</div>' +
       (conv.length ? '<button type="button" class="btn conv-btn" id="btn-conv" title="Gera o PDF de convites (8 por folha) só para quem não conseguimos contato: sem telefone ou marcado como sem contato, com audiência marcada e ainda não avisado"><svg class="i"><use href="#i-file"/></svg>Gerar convites (' + conv.length + ')</button>' : '');
     state.convList = conv;
+    var wa = gruposWhats(list);
+    state.whatsGrupos = wa;
+    if (wa.length && isAdmin()){
+      $('list-sum').insertAdjacentHTML('beforeend', '<button type="button" class="btn wa-btn" id="btn-whats" title="Lembrete da audiência pelo WhatsApp (LiderHub, Pós-venda) para os clientes desta lista que têm telefone"><svg class="i"><use href="#i-bell"/></svg>Lembrete WhatsApp (' + wa.length + ')</button>');
+    }
   }
   function renderList(){
     var list = sortRows(state.rows.filter(matches));
@@ -1712,7 +1744,112 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       toast('Não foi possível gerar o PDF. Tente de novo.');
     } finally { btn.disabled = false; }
   }
-  $('list-sum').addEventListener('click', function(e){ var b = e.target.closest('#btn-conv'); if (b) openConv(b); });
+  $('list-sum').addEventListener('click', function(e){ var b = e.target.closest('#btn-conv'); if (b) openConv(b); var w = e.target.closest('#btn-whats'); if (w) openWhats(); });
+
+  /* ---------- lembrete por WhatsApp (LiderHub) ---------- */
+  var WA_MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+  var WA_PADRAO = 'Olá, {nome}! Aqui é do escritório do Dr. Thiago Litaiff.\n\nPassando para lembrar da audiência contra a Âmbar Energia:\n{audiencia}\n📍 *Novo Fórum de Justiça da Comarca de Alvarães*\n\nÉ obrigatório levar documento com foto (RG ou CNH). Se faltar, o processo pode ser encerrado.\n\nQualquer dúvida, é só responder esta mensagem.';
+  function waNumero(c){ var d = String(c || '').replace(/\D/g, ''); if (d.indexOf('55') === 0 && d.length >= 12) d = d.slice(2); if (d.charAt(0) === '0') d = d.slice(1); if (d.length === 11 && d.charAt(2) === '9') d = d.slice(0, 2) + d.slice(3); return d.length === 10 ? d : ''; }
+  function waData(iso){ var p = iso.split('-'); return p[2] + ' de ' + WA_MESES[+p[1] - 1] + ' de ' + p[0] + ' (' + PDF_DIAS[new Date(+p[0], +p[1] - 1, +p[2]).getDay()] + ')'; }
+  function waPrimeiro(n){ return String(n || '').trim().split(/\s+/)[0] || ''; }
+  function waNomes(a){ return a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' e ' + a[a.length - 1]; }
+  // one message per phone number: relatives sharing a phone get a single message
+  function gruposWhats(list){
+    var by = {};
+    list.forEach(function(r){
+      if (!isFuture(r) || (r.lembreteWhats && r.lembreteWhats.ok)) return;
+      var n = waNumero(r.contato); if (!n) return;
+      (by[n] = by[n] || []).push(r);
+    });
+    return Object.keys(by).map(function(n){ return { numero: n, clientes: by[n].sort(function(a, b){ return (a.audData + a.audHora).localeCompare(b.audData + b.audHora); }) }; })
+      .sort(function(a, b){ var x = a.clientes[0], y = b.clientes[0]; return (x.audData + x.audHora + x.nome).localeCompare(y.audData + y.audHora + y.nome, 'pt-BR'); });
+  }
+  function waTexto(modelo, g){
+    var cs = g.clientes, iguais = cs.every(function(c){ return c.audData === cs[0].audData && c.audHora === cs[0].audHora; });
+    var aud = iguais ? '📅 *' + waData(cs[0].audData) + '*\n🕑 *' + pdfHora(cs[0].audHora) + '*'
+      : cs.map(function(c){ return '📅 *' + waPrimeiro(c.nome) + ':* ' + waData(c.audData) + ', às ' + pdfHora(c.audHora); }).join('\n');
+    return modelo.split('{nome}').join(waNomes(cs.map(function(c){ return waPrimeiro(c.nome); }))).split('{audiencia}').join(aud);
+  }
+  var waFn = null, waRodando = false, waArmado = false;
+  function waChamar(body){
+    return waFn(body).then(function(r){
+      if (r.error){ return (r.error.context && r.error.context.json ? r.error.context.json() : Promise.resolve({})).then(function(j){ throw new Error((j && j.erro) || r.error.message); }); }
+      return r.data;
+    });
+  }
+  function waLog(t){ $('wa-log-wrap').hidden = false; var l = $('wa-log'); l.textContent += t + '\n'; l.scrollTop = l.scrollHeight; }
+  function waInfo(){
+    var g = state.whatsGrupos || [], cli = g.reduce(function(t, x){ return t + x.clientes.length; }, 0), comp = g.filter(function(x){ return x.clientes.length > 1; }).length;
+    var ja = state.rows.filter(function(r){ return r.lembreteWhats && r.lembreteWhats.ok; }).length;
+    $('wa-info').innerHTML = '<b class="tnum">' + g.length + (g.length === 1 ? ' mensagem' : ' mensagens') + '</b> para <b class="tnum">' + cli + '</b> clientes da lista atual com audiência marcada e telefone' +
+      (comp ? ' (' + comp + ' números são de mais de um cliente e recebem uma mensagem só)' : '') + '.' + (ja ? ' ' + ja + ' clientes já receberam o lembrete e ficam de fora.' : '');
+    var seg = +$('wa-intervalo').value, min = Math.ceil(g.length * seg / 60);
+    $('wa-duracao').textContent = 'As mensagens saem ao longo de cerca de ' + (min >= 60 ? Math.floor(min / 60) + 'h' + String(min % 60).padStart(2, '0') : min + ' min') + '.';
+    $('wa-prev').textContent = g.length ? waTexto($('wa-modelo').value, g[0]) : 'Ninguém para enviar nesta lista.';
+    $('wa-go').textContent = waArmado ? 'Confirmar envio de ' + g.length + ' mensagens' : 'Enviar para ' + g.length;
+    $('wa-go').disabled = !g.length || waRodando || !$('wa-conexao').value;
+  }
+  async function openWhats(){
+    if (!isAdmin()) return;
+    waFn = waFn || function(b){ return window.__qeSB.functions.invoke('lembrete-whatsapp', { body: b }); };
+    if (!$('wa-modelo').value) $('wa-modelo').value = WA_PADRAO;
+    waArmado = false; $('wa-go').classList.remove('armed');
+    if (!waRodando){ $('wa-log').textContent = ''; $('wa-log-wrap').hidden = true; }
+    waInfo(); dlgW.showModal();
+    var sel = $('wa-conexao'); if (sel.dataset.ok) return;
+    sel.innerHTML = '<option value="">Carregando conexões…</option>'; $('wa-conexao-hint').textContent = '';
+    try {
+      var d = await waChamar({ acao: 'conexoes' });
+      var cs = d.conexoes || [];
+      if (!cs.length){ sel.innerHTML = '<option value="">Nenhum número conectado no LiderHub</option>'; return; }
+      sel.innerHTML = cs.map(function(c){ return '<option value="' + esc(c.id) + '">' + esc(String(c.numero || 'sem número')) + ' · ' + esc(c.status || '') + ' · ' + esc(c.tipo || '') + '</option>'; }).join('');
+      sel.dataset.ok = '1';
+      $('wa-conexao-hint').textContent = 'Confira se é o número do Pós-venda e se está conectado.';
+    } catch(e){ sel.innerHTML = '<option value="">Não foi possível carregar</option>'; $('wa-conexao-hint').textContent = e.message; }
+    waInfo();
+  }
+  var dlgW = $('dlg-whats');
+  $('wa-cancel').addEventListener('click', function(){ dlgW.close(); });
+  ['wa-modelo', 'wa-intervalo', 'wa-conexao'].forEach(function(id){ $(id).addEventListener('input', function(){ waArmado = false; $('wa-go').classList.remove('armed'); waInfo(); }); });
+  $('wa-teste').addEventListener('input', function(e){ e.target.value = maskTel(e.target.value); });
+  $('wa-teste-go').addEventListener('click', async function(){
+    var g = (state.whatsGrupos || [])[0], n = $('wa-teste').value;
+    if (!g){ toast('Ninguém para enviar nesta lista'); return; }
+    if (!waNumero(n)){ $('wa-teste').focus(); toast('Informe seu WhatsApp com DDD'); return; }
+    if (!$('wa-conexao').value){ toast('Escolha o número que envia'); return; }
+    this.disabled = true;
+    try {
+      var d = await waChamar({ acao: 'enviar', conexao: $('wa-conexao').value, itens: [{ chave: 'teste', numero: n, nome: 'Teste', texto: '[TESTE] ' + waTexto($('wa-modelo').value, g) }] });
+      var r = (d.resultados || [])[0] || {};
+      waLog(r.ok ? 'Teste enviado para ' + n + '. Confira no seu WhatsApp.' : 'Teste não enviado: ' + (r.erro || 'sem detalhe'));
+    } catch(e){ waLog('Teste não enviado: ' + e.message); }
+    finally { this.disabled = false; }
+  });
+  $('form-whats').addEventListener('submit', async function(e){
+    e.preventDefault();
+    if (waRodando) return;
+    if (!waArmado){ waArmado = true; $('wa-go').classList.add('armed'); waInfo(); return; }
+    var grupos = (state.whatsGrupos || []).slice(), modelo = $('wa-modelo').value, conexao = $('wa-conexao').value, seg = +$('wa-intervalo').value;
+    waRodando = true; waArmado = false; $('wa-go').classList.remove('armed'); waInfo();
+    var base = Date.now() + 60000, ok = 0, falhas = 0;
+    waLog('Enviando ' + grupos.length + ' mensagens para o LiderHub…');
+    for (var i = 0; i < grupos.length; i += 8){
+      var lote = grupos.slice(i, i + 8);
+      var itens = lote.map(function(g, k){ return { chave: g.numero, numero: g.numero, nome: g.clientes.map(function(c){ return c.nome; }).join(' / '), texto: waTexto(modelo, g), agendarEm: new Date(base + (i + k) * seg * 1000).toISOString() }; });
+      try {
+        var d = await waChamar({ acao: 'enviar', conexao: conexao, itens: itens });
+        for (var j = 0; j < (d.resultados || []).length; j++){
+          var r = d.resultados[j], g = lote.filter(function(x){ return x.numero === r.chave; })[0]; if (!g) continue;
+          var reg = { em: new Date().toISOString(), ok: !!r.ok, numero: r.numero || g.numero, erro: r.ok ? '' : (r.erro || ''), agendadoPara: r.ok ? itens.filter(function(x){ return x.chave === r.chave; })[0].agendarEm : '' };
+          for (var c = 0; c < g.clientes.length; c++){ try { await patchRow(g.clientes[c].id, { lembreteWhats: reg }); } catch(e2){} }
+          if (r.ok) ok++; else { falhas++; waLog('Não enviado para ' + g.clientes.map(function(x){ return waPrimeiro(x.nome); }).join(', ') + ' (' + g.numero + '): ' + r.erro); }
+        }
+      } catch(err){ falhas += lote.length; waLog('Erro no lote ' + (i / 8 + 1) + ': ' + err.message); }
+      waLog('Andamento: ' + Math.min(i + 8, grupos.length) + ' de ' + grupos.length + ' (' + ok + ' agendadas, ' + falhas + ' com problema)');
+    }
+    waLog('Concluído. ' + ok + ' mensagens agendadas no LiderHub, começando em 1 minuto. ' + falhas + ' não foram agendadas.');
+    waRodando = false; waInfo();
+  });
 
 
   /* ---------- light / dark ---------- */
@@ -1743,6 +1880,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     return;
   }
   var SB = window.supabase.createClient(cfg.url, cfg.key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+  window.__qeSB = SB;
 
   /* Firestore-like adapter over Supabase so the app code above stays the same */
   function dbErr(e){ var er = new Error((e && e.message) || 'erro'); er.code = (e && (e.code === '42501' || /permiss|policy|row-level/i.test(e.message || ''))) ? 'permission' : 'db'; return er; }

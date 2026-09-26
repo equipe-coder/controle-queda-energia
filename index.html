@@ -66,6 +66,8 @@ body{margin:0}
 .integ-row{display:flex;gap:8px;flex-wrap:wrap}
 .integ-row .pw{flex:1 1 260px}
 .integ-row .pw input{width:100%}
+#lh-chave.mask{-webkit-text-security:disc;text-security:disc}
+.lh-aviso{font-size:12px;color:var(--amber)}
 .eq-row{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,2fr) auto auto auto;gap:12px;align-items:center;padding:12px 16px;border-top:1px solid var(--line)}
 .eq-row:first-child{border-top:0}
 .eq-row .nm{font-weight:600}
@@ -608,7 +610,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
           <div class="integ-top"><div><b>LiderHub · WhatsApp Pós-venda</b><div class="small" id="lh-status">Verificando…</div></div><button type="button" class="btn" id="lh-testar">Testar conexão</button></div>
           <form id="form-lh" class="integ-form" novalidate autocomplete="off">
             <label for="lh-chave">Chave da API do LiderHub</label>
-            <div class="integ-row"><div class="pw"><input id="lh-chave" type="password" autocomplete="new-password" placeholder="Cole aqui a chave gerada no LiderHub"><button type="button" class="pw-eye" id="lh-eye" aria-label="Mostrar chave" title="Mostrar chave"><svg class="i"><use href="#i-eye"/></svg></button></div><button class="btn primary" type="submit" id="lh-salvar">Salvar chave</button></div>
+            <div class="integ-row"><div class="pw"><input id="lh-chave" type="text" class="mask" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore placeholder="Cole aqui a chave gerada no LiderHub"><button type="button" class="pw-eye" id="lh-eye" aria-label="Mostrar chave" title="Mostrar chave"><svg class="i"><use href="#i-eye"/></svg></button></div><button class="btn primary" type="submit" id="lh-salvar">Salvar chave</button></div>
             <span class="hint">Gere no LiderHub, no workspace Pós-venda: Configurações → Credenciais API. Depois de salva, a chave fica guardada no banco e não aparece mais na tela, nem para administradores.</span>
           </form>
         </div>
@@ -2053,13 +2055,15 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     var d = r.data && r.data[0];
     $('lh-status').textContent = r.error ? 'Não foi possível verificar agora.' : d ? 'Chave cadastrada (termina em ••' + d.final + ') em ' + new Date(d.atualizado_em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) + (d.atualizado_por ? ' por ' + d.atualizado_por : '') + '.' : 'Nenhuma chave cadastrada. O lembrete por WhatsApp só funciona depois de salvar a chave.';
   }
-  $('lh-eye').addEventListener('click', function(){ var i = $('lh-chave'), m = i.type === 'password'; i.type = m ? 'text' : 'password'; this.querySelector('use').setAttribute('href', m ? '#i-eyeoff' : '#i-eye'); });
+  $('lh-eye').addEventListener('click', function(){ var i = $('lh-chave'), m = i.classList.toggle('mask') === false; this.querySelector('use').setAttribute('href', m ? '#i-eyeoff' : '#i-eye'); this.title = m ? 'Esconder chave' : 'Mostrar chave'; });
+  // pasted keys often come with spaces or line breaks around them
+  $('lh-chave').addEventListener('input', function(){ var v = this.value.replace(/\s+/g, ''); if (v !== this.value) this.value = v; });
   $('form-lh').addEventListener('submit', async function(e){
     e.preventDefault();
-    var v = $('lh-chave').value.trim();
-    if (!v){ $('lh-chave').focus(); toast('Cole a chave do LiderHub'); return; }
+    var v = $('lh-chave').value.replace(/\s+/g, '');
+    if (v.length < 20){ $('lh-chave').focus(); toast(v ? 'Essa chave parece incompleta. Copie de novo no LiderHub e cole aqui.' : 'Cole a chave do LiderHub'); return; }
     $('lh-salvar').disabled = true;
-    try { var r = await SB.rpc('salvar_segredo', { p_nome: 'liderhub', p_valor: v }); if (r.error) throw r.error; $('lh-chave').value = ''; $('lh-chave').type = 'password'; toast('Chave do LiderHub salva'); await lhStatus(); var sel = $('wa-conexao'); if (sel) delete sel.dataset.ok; }
+    try { var r = await SB.rpc('salvar_segredo', { p_nome: 'liderhub', p_valor: v }); if (r.error) throw r.error; $('lh-chave').value = ''; $('lh-chave').classList.add('mask'); toast('Chave do LiderHub salva'); await lhStatus(); var sel = $('wa-conexao'); if (sel) delete sel.dataset.ok; }
     catch(err){ toast('Não foi possível salvar: ' + ((err && err.message) || 'erro')); }
     finally { $('lh-salvar').disabled = false; }
   });

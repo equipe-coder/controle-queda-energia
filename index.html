@@ -71,6 +71,22 @@ body{margin:0}
 .btn.lh-save{background:#27396B;border-color:#27396B;color:#fff}
 .btn.lh-save:hover{background:#1F2F5A;border-color:#1F2F5A}
 .integ-s{font-size:12px;color:var(--ink-3);margin-top:4px}
+.chk{display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer}
+.integ-grid{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}
+.integ.regua{max-width:760px;flex:1 1 520px}
+.regua-etapas{display:flex;flex-wrap:wrap;gap:6px}
+.regua-etapas .pill{font-size:12px}
+.regua-campos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.regua-campos label{font-weight:600;font-size:12.5px;color:var(--ink-2);display:block;margin-bottom:4px}
+.regua-campos select,.regua-campos input{width:100%}
+.regua details{border:1px solid var(--line);border-radius:9px;padding:8px 12px}
+.regua details summary{cursor:pointer;font-weight:600;font-size:13px}
+.regua textarea{width:100%;min-height:120px;font-size:12.5px;line-height:1.45;margin-top:8px}
+.regua-prev{font-size:12.5px;border-collapse:collapse;width:100%}
+.regua-prev th,.regua-prev td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:left}
+.regua-prev td.n{font-variant-numeric:tabular-nums}
+.btn.lh-on{background:var(--green);border-color:var(--green);color:#fff}
+@media (max-width:640px){ .regua-campos{grid-template-columns:1fr} }
 .integ-top{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
 .integ-form{display:flex;flex-direction:column;gap:6px}
 .integ-form label{font-weight:600;font-size:12.5px;color:var(--ink-2)}
@@ -539,6 +555,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
                 <button type="button" data-v="todas" aria-pressed="true">Todas <span class="n" data-n="aud:todas"></span></button>
                 <button type="button" data-v="semana" aria-pressed="false">Próximos 7 dias <span class="n" data-n="aud:semana"></span></button>
                 <button type="button" data-v="sem" aria-pressed="false">Sem data <span class="n" data-n="aud:sem"></span></button>
+                <button type="button" data-v="online" aria-pressed="false">Online <span class="n" data-n="aud:online"></span></button>
               </div>
               <button type="button" class="day-chip tnum" id="fb-dia" hidden></button>
             </div>
@@ -638,6 +655,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
         </div>
         <div class="card eq-list" id="eq-list"></div>
         <div class="sec-title">Integrações</div>
+        <div class="integ-grid">
         <div class="card integ">
           <div><b class="integ-t">LiderHub</b><p class="integ-d">Chave do workspace Pós-venda, encontrada no LiderHub em Configurações → Credenciais API.</p></div>
           <form id="form-lh" class="integ-form" novalidate autocomplete="off">
@@ -646,6 +664,29 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
             <div class="integ-btns"><button class="btn lh-save" type="submit" id="lh-salvar"><svg class="i"><use href="#i-save"/></svg>Salvar</button><button type="button" class="btn" id="lh-testar"><svg class="i"><use href="#i-sync"/></svg>Testar conexão</button></div>
             <small class="integ-s" id="lh-status">Verificando…</small>
           </form>
+        </div>
+        <div class="card integ regua">
+          <div><b class="integ-t">Régua de avisos automáticos</b><p class="integ-d">Quando a audiência é marcada, o sistema avisa o cliente pelo WhatsApp do Pós-venda, sozinho, em cada etapa. Envia poucos por vez, só em dias úteis das 8h às 18h (Manaus), com limite por dia.</p></div>
+          <div class="regua-etapas">
+            <span class="pill blue">Dia da designação</span><span class="pill blue">10 dias depois</span><span class="pill blue">10 dias antes</span><span class="pill blue">5 dias antes</span><span class="pill blue">Véspera</span>
+          </div>
+          <div class="regua-campos">
+            <div><label for="rg-conexao">Número que envia</label><select id="rg-conexao"><option value="">Carregando…</option></select></div>
+            <div><label for="rg-dia">Limite de mensagens por dia</label><input id="rg-dia" type="number" min="10" max="200" step="5" value="70" class="tnum"></div>
+          </div>
+          <details id="rg-modelos"><summary>Textos de cada etapa</summary><div id="rg-textos"></div><span class="hint">{nome} = primeiro nome do cliente · {audiencia} = data e horário (30 min antes do real) · {dias} = dias que faltam · {quando} = "amanhã" ou o dia da semana. Para audiência online, a linha do Fórum é trocada pelo aviso de videochamada.</span></details>
+          <div class="integ-btns">
+            <button type="button" class="btn lh-save" id="rg-salvar"><svg class="i"><use href="#i-save"/></svg>Salvar</button>
+            <button type="button" class="btn" id="rg-ligar">Ligar régua</button>
+            <button type="button" class="btn" id="rg-previa"><svg class="i"><use href="#i-cal"/></svg>Ver previsão</button>
+          </div>
+          <div id="rg-previa-box" hidden></div>
+          <div class="regua-campos">
+            <div><label for="rg-teste-etapa">Testar etapa</label><select id="rg-teste-etapa"><option value="designacao">Dia da designação</option><option value="d10">10 dias depois</option><option value="h10">10 dias antes</option><option value="h5" selected>5 dias antes</option><option value="h1">Véspera</option></select></div>
+            <div><label for="rg-teste-num">Seu WhatsApp</label><div class="integ-row"><input id="rg-teste-num" inputmode="tel" placeholder="(97) 00000-0000" class="tnum" style="flex:1 1 140px"><button type="button" class="btn" id="rg-teste">Enviar teste</button></div></div>
+          </div>
+          <small class="integ-s" id="rg-status">Verificando…</small>
+        </div>
         </div>
         <p class="foot-note">Depois de cadastrar, envie o endereço do sistema ao funcionário. No primeiro uso ele clica em <b>Primeiro acesso</b>, informa o mesmo e-mail cadastrado aqui e cria a senha dele. <b>Administrador</b> faz tudo, inclusive excluir clientes e cuidar da equipe. <b>Assistente</b> cadastra e atualiza clientes, avisos e resultados, e gera convites, mas não exclui registros.</p>
       </section>
@@ -687,6 +728,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       <div class="section-lbl">Audiência</div>
       <div class="field"><label for="f-data">Data</label><input id="f-data" type="date"></div>
       <div class="field"><label for="f-hora">Hora</label><input id="f-hora" type="time"></div>
+      <div class="field full"><label class="chk"><input id="f-online" type="checkbox"> Audiência online (por videochamada)</label></div>
       <div class="field"><label for="f-situacao">Situação do aviso</label>
         <select id="f-situacao"><option value="pendente">Não avisado</option><option value="avisado">Avisado</option><option value="sem_contato">Sem contato</option></select></div>
       <div class="field"><label for="f-resp">Responsável pelo aviso</label><select id="f-resp"><option value="">Sem responsável</option></select></div>
@@ -871,7 +913,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     var e = norm(end);
     return state.prosp.find(function(p){ return (p.palavrasEndereco || []).some(function(k){ return k && e.indexOf(norm(k)) >= 0; }); });
   }
-  function precisaConvite(r){ return isFuture(r) && !r.avisado && (!r.contato || sit(r) === 'sem_contato'); }
+  function precisaConvite(r){ return isFuture(r) && !r.avisado && sit(r) === 'sem_contato'; } // only clients nobody can reach; missing phones are a registration task, not a convite
   function passTel(r, f){ if (!f || f === 'todos') return true; return f === 'sem' ? !r.contato : !!r.contato; }
   function passResp(r, f){ if (!f) return true; if (f === '-') return !prospName(r.responsavelId); return r.responsavelId === f; }
   function fmtAny(s){ if (!s) return ''; return /^\d{4}-\d{2}-\d{2}$/.test(s) ? fmtDate(s) : new Date(s).toLocaleDateString('pt-BR'); }
@@ -922,6 +964,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     var n = daysUntil(r.audData);
     if (f === 'semana') return n != null && n >= 0 && n <= 7;
     if (f === 'sem') return !r.audData;
+    if (f === 'online') return !!r.online;
     return true;
   }
   /* o overrides one group so each option can show how many clients it would list */
@@ -947,7 +990,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     var n = daysUntil(r.audData);
     var cls = n < 0 ? 'muted' : (n <= 3 ? 'crit' : (n <= 7 ? 'warn' : 'blue'));
     return '<div class="cell-stack"><div class="val">' + fmtDate(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') + '</div>' +
-           '<span class="pill ' + cls + '">' + relLabel(n) + '</span></div>';
+           '<span class="pill ' + cls + '">' + relLabel(n) + '</span>' + (r.online ? '<span class="pill" style="background:var(--purple);color:#fff">Online</span>' : '') + '</div>';
   }
   var MEIOS = { whatsapp: 'WhatsApp', convite: 'Convite', prospectador: 'Prospectador', ligacao: 'Ligação', pessoalmente: 'Pessoalmente' };
   function passMeio(r, f){ if (!f || f === 'todos') return true; if (!r.avisado) return false; if (f === 'outro') return r.meioAviso === 'ligacao' || r.meioAviso === 'pessoalmente'; return r.meioAviso === f; }
@@ -961,6 +1004,9 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     var resp = pn ? '<div class="small">Resp.: <b>' + esc(pn) + '</b></div>' : (pend ? '<div class="small">Sem responsável</div>' : '');
     var meio = r.avisado && r.meioAviso ? '<span class="pill meio meio-' + esc(r.meioAviso) + '">' + esc(MEIOS[r.meioAviso] || r.meioAviso) + '</span>' : '';
     extra += meio;
+    var ETQ = { designacao: 'designação', d10: '10 dias depois', h10: '10 dias antes', h5: '5 dias antes', h1: 'véspera' };
+    if (r.semWhatsApp) extra += '<span class="pill warn" title="O número cadastrado não tem WhatsApp. Atualize o telefone no cadastro.">Número sem WhatsApp</span>';
+    else if (r.reguaUltimo && r.reguaUltimo.status === 'enviado') extra += '<div class="small">WhatsApp automático: ' + esc(ETQ[r.reguaUltimo.etapa] || r.reguaUltimo.etapa) + ' em ' + fmtAny(r.reguaUltimo.em) + '</div>';
     var when = r.avisado && (r.avisadoEm || r.avisadoA) ? '<div class="small">' + (r.avisadoEm ? 'em ' + fmtAny(r.avisadoEm) : '') + (r.avisadoA ? (r.avisadoEm ? ' · ' : '') + esc(r.avisadoA) : '') + '</div>' : '';
     return '<div class="cell-stack"><button type="button" class="toggle' + (pend ? ' pending' : '') + '" data-act="aviso" data-id="' + esc(r.id) + '" aria-pressed="' + (r.avisado ? 'true' : 'false') + '"><span class="dot"></span>' + label + '</button>' + extra + when + resp + '</div>';
   }
@@ -1063,7 +1109,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     if (state.dia){ titulo = DOW[parseDate(state.dia).getDay()].replace(/^./, function(c){ return c.toUpperCase(); }) + ', ' + fmtDate(state.dia) + (state.hora ? ' às ' + state.hora.replace(':00', 'h') : ''); }
     var extra = [];
     if (state.filter === 'pendente') extra.push('não avisados'); else if (state.filter === 'avisado') extra.push('avisados'); else if (state.filter === 'semcontato') extra.push('sem contato');
-    if (state.aud === 'semana') extra.push('próximos 7 dias'); else if (state.aud === 'sem') extra.push('sem data');
+    if (state.aud === 'semana') extra.push('próximos 7 dias'); else if (state.aud === 'sem') extra.push('sem data'); else if (state.aud === 'online') extra.push('audiência online');
     if (state.resp) extra.push(state.resp === '-' ? 'sem responsável' : prospName(state.resp));
     if (state.tel === 'sem') extra.push('sem telefone'); else if (state.tel === 'com') extra.push('com telefone');
     if (state.meio !== 'todos') extra.push(state.meio === 'outro' ? 'avisados por ligação ou pessoalmente' : 'avisados por ' + (MEIOS[state.meio] || state.meio).toLowerCase());
@@ -1076,11 +1122,11 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
         '<span><i class="dot warn"></i><b class="tnum">' + falta + '</b> a avisar</span>' +
         '<span><i class="dot crit"></i><b class="tnum">' + sc + '</b> sem contato</span>' +
       '</div>' +
-      (conv.length ? '<button type="button" class="btn conv-btn" id="btn-conv" title="Gera o PDF de convites (8 por folha) só para quem não conseguimos contato: sem telefone ou marcado como sem contato, com audiência marcada e ainda não avisado"><svg class="i"><use href="#i-file"/></svg>Gerar convites (' + conv.length + ')</button>' : '');
+      (conv.length ? '<button type="button" class="btn conv-btn" id="btn-conv" title="Gera o PDF de convites (8 por folha) só para os clientes marcados como sem contato, com audiência marcada e ainda não avisados"><svg class="i"><use href="#i-file"/></svg>Gerar convites (' + conv.length + ')</button>' : '');
     state.convList = conv;
     var wa = gruposWhats(list);
     state.whatsGrupos = wa;
-    if (wa.length && isAdmin()){
+    if (false && wa.length && isAdmin()){ // replaced by the automatic régua (Configurações)
       $('list-sum').insertAdjacentHTML('beforeend', '<button type="button" class="btn wa-btn" id="btn-whats" title="Lembrete da audiência pelo WhatsApp (LiderHub, Pós-venda) para os clientes desta lista que têm telefone"><svg class="i"><use href="#i-bell"/></svg>Lembrete WhatsApp (' + wa.length + ')</button>');
     }
   }
@@ -1386,6 +1432,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     $('f-contato').value = r ? r.contato || '' : '';
     $('f-data').value = r ? r.audData || '' : '';
     $('f-hora').value = r ? r.audHora || '' : '';
+    $('f-online').checked = !!(r && r.online);
     $('f-situacao').value = r ? sit(r) : 'pendente';
     $('f-resp').innerHTML = '<option value="">Sem responsável</option>' + state.prosp.map(function(p){ return '<option value="' + esc(p.id) + '">' + esc(p.nome) + '</option>'; }).join('');
     $('f-resp').value = r && prospById(r.responsavelId) ? r.responsavelId : '';
@@ -1440,7 +1487,9 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     var avisoEm = $('f-avisoem').value || (avisado ? iso(new Date()) : '');
     var data = Object.assign({}, prev, {
       nome: nome, cpf: $('f-cpf').value.trim(), rg: $('f-rg').value.trim(), endereco: $('f-end').value.trim(),
-      contato: $('f-contato').value.trim(), audData: $('f-data').value || '', audHora: $('f-hora').value || '',
+      contato: $('f-contato').value.trim(), audData: $('f-data').value || '', audHora: $('f-hora').value || '', online: $('f-online').checked,
+      // day the hearing was set (starts the régua); kept while the date stays the same
+      audMarcadaEm: $('f-data').value && $('f-data').value !== prev.audData ? iso(new Date()) : (prev.audMarcadaEm || ''),
       avisado: avisado, situacao: situacao, responsavelId: $('f-resp').value || (!state.editing && prospForAddress($('f-end').value) ? prospForAddress($('f-end').value).id : ''), avisadoEm: avisoEm || null, avisadoA: $('f-avisadoa').value.trim(), meioAviso: avisado ? $('f-meio').value : (prev.meioAviso || ''),
       processo: $('f-proc').value.trim(), uc: $('f-uc').value.trim(), periodo: $('f-periodo').value.trim(), tese: $('f-tese').value.trim(),
       protocolo: $('f-protocolo').value || '', contatadoRetorno: $('f-contatado').value === 'sim' ? (prev.contatadoRetorno || iso(new Date())) : null,
@@ -1771,7 +1820,8 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       var end = fit(r.endereco || 'Endereço não informado', 'normal', 8.3, tw, 2);
       var data = pdfDataLonga(r.audData), hx = ix + iw - pad - 19;
       var dataSize = shrink(data, 'bold', 12.5, hx - tx - 6, 10);
-      var locSize = cfg.local ? shrink(cfg.local, 'bold', 10, tw, 8) : 10;
+      var localR = r.online ? 'Audiência online, por videochamada' : cfg.local;
+      var locSize = localR ? shrink(localR, 'bold', 10, tw, 8) : 10;
       var ori = cfg.orientacao ? fit(cfg.orientacao, 'bold', 7.6, tw - 9.5, 2) : [];
       var rod = [cfg.escritorio, cfg.telefone].filter(Boolean).join('  ·  ');
       var blocks = [
@@ -1802,7 +1852,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
           doc.setFont('helvetica', 'bold'); doc.setFontSize(15); ink(C.ink); doc.text(pdfHora(r.audHora), hx, t + 10);
         } else if (b.k === 'local'){
           label('LOCAL DA AUDIÊNCIA', tx, t + 2.3);
-          if (cfg.local){ doc.setFont('helvetica', 'bold'); doc.setFontSize(locSize); ink(C.ink); doc.text(cfg.local, tx, t + 2.3 + 1.6 + locSize * PT * 0.82); }
+          if (localR){ doc.setFont('helvetica', 'bold'); doc.setFontSize(locSize); ink(C.ink); doc.text(localR, tx, t + 2.3 + 1.6 + locSize * PT * 0.82); }
           else { draw(C.sub); doc.setLineWidth(0.25); doc.line(tx, t + 7, ix + iw - pad, t + 7); }
         } else if (b.k === 'ori'){
           fill(C.warnBg); doc.roundedRect(ix + pad - 2, t, tw + 4, b.h, 1.6, 1.6, 'F');
@@ -2196,7 +2246,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     if (iniciado){ render(); return; }
     iniciado = true;
     state.db = DB;
-    if (f.data === 'admin') lhStatus();
+    if (f.data === 'admin'){ lhStatus(); rgCarregar(); }
     function carimbo(){ var n = new Date(); $('sync').textContent = 'Atualizado: ' + n.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ', ' + n.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); }
     function caiu(){ $('sync').textContent = 'Conexão interrompida'; banner('A conexão com a base foi interrompida. Recarregue a página.'); }
     watchTable('clientes', function(rows){ state.rows = rows; banner(''); carimbo(); render(); }, caiu);
@@ -2257,6 +2307,80 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       var cs = (r.data && r.data.conexoes) || [];
       st.textContent = cs.length ? 'Conexão OK. Números no workspace: ' + cs.map(function(c){ return c.numero + ' (' + (c.status || '?') + ')'; }).join(', ') : 'A chave funciona, mas o workspace não tem nenhum número conectado.';
     } catch(e2){ st.textContent = 'Falhou: ' + e2.message; }
+    finally { this.disabled = false; }
+  });
+
+  /* ---------- régua de avisos automáticos ---------- */
+  var RG = { cfg: null, modelos: null };
+  var RG_NOMES = { designacao: 'Dia da designação', d10: '10 dias depois da designação', h10: '10 dias antes da audiência', h5: '5 dias antes da audiência', h1: 'Véspera da audiência' };
+  function rgFn(b){ return SB.functions.invoke('lembrete-whatsapp', { body: b }).then(function(r){ if (r.error){ return (r.error.context && r.error.context.json ? r.error.context.json().catch(function(){ return {}; }) : Promise.resolve({})).then(function(j){ throw new Error((j && j.erro) || r.error.message); }); } return r.data; }); }
+  async function rgCarregar(){
+    try {
+      var c = await SB.from('config').select('data').eq('id', 'regua').maybeSingle();
+      RG.cfg = Object.assign({ ativo: false, porDia: 70, modelos: {} }, (c.data && c.data.data) || {});
+      $('rg-dia').value = RG.cfg.porDia || 70;
+      rgStatus();
+      var m = await rgFn({ acao: 'regua-modelos' }); RG.modelos = m.modelos;
+      $('rg-textos').innerHTML = (m.etapas || []).map(function(e){ return '<label style="display:block;margin-top:10px;font-size:12.5px;font-weight:600">' + esc(RG_NOMES[e] || e) + '</label><textarea id="rg-t-' + e + '">' + esc((RG.cfg.modelos && RG.cfg.modelos[e]) || m.modelos[e]) + '</textarea>'; }).join('');
+      var cx = await rgFn({ acao: 'conexoes' });
+      $('rg-conexao').innerHTML = (cx.conexoes || []).map(function(x){ return '<option value="' + esc(x.id) + '">' + esc(String(x.numero || '')) + ' · ' + esc(x.status || '') + '</option>'; }).join('') || '<option value="">Nenhum número conectado</option>';
+      if (RG.cfg.conexao) $('rg-conexao').value = RG.cfg.conexao;
+    } catch(e){ $('rg-status').textContent = 'Não foi possível carregar a régua: ' + e.message; }
+  }
+  function rgStatus(){
+    var c = RG.cfg || {};
+    $('rg-ligar').textContent = c.ativo ? 'Desligar régua' : 'Ligar régua';
+    $('rg-ligar').classList.toggle('lh-on', !c.ativo);
+    $('rg-status').textContent = (c.ativo ? 'Régua LIGADA desde ' + (c.inicio ? c.inicio.split('-').reverse().join('/') : '—') + '.' : 'Régua desligada. Nada é enviado automaticamente.') +
+      (c.ultimaRodada ? ' Última verificação: ' + new Date(c.ultimaRodada).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) + '.' : '');
+  }
+  function rgCampos(){
+    var modelos = {};
+    ['designacao', 'd10', 'h10', 'h5', 'h1'].forEach(function(e){ var t = $('rg-t-' + e); if (t && RG.modelos && t.value.trim() && t.value !== RG.modelos[e]) modelos[e] = t.value; });
+    return { porDia: Math.max(10, Math.min(200, +$('rg-dia').value || 70)), conexao: $('rg-conexao').value || RG.cfg.conexao || '', modelos: modelos };
+  }
+  async function rgGravar(extra){
+    var campos = Object.assign(rgCampos(), extra || {});
+    var r = await SB.rpc('atualizar_doc', { p_tabela: 'config', p_id: 'regua', p_campos: campos }); if (r.error) throw r.error;
+    RG.cfg = Object.assign(RG.cfg || {}, campos); rgStatus();
+  }
+  $('rg-salvar').addEventListener('click', async function(){ try { await rgGravar(); toast('Régua salva'); } catch(e){ toast('Não foi possível salvar: ' + e.message); } });
+  var rgArmado = false;
+  $('rg-ligar').addEventListener('click', async function(){
+    var c = RG.cfg || {};
+    if (!c.ativo && !rgArmado){ rgArmado = true; this.textContent = 'Confirmar: ligar a régua'; this.classList.add('armed'); return; }
+    rgArmado = false; this.classList.remove('armed'); this.disabled = true;
+    try {
+      if (!c.ativo){
+        if (!$('rg-conexao').value){ toast('Escolha o número que envia'); return; }
+        await rgFn({ acao: 'regua-preparar' });
+        await rgGravar({ ativo: true, inicio: c.inicio || iso(new Date()) });
+        toast('Régua ligada. Os avisos saem sozinhos em dias úteis, das 8h às 18h.');
+      } else { await rgGravar({ ativo: false }); toast('Régua desligada'); }
+    } catch(e){ toast('Não foi possível: ' + e.message); rgStatus(); }
+    finally { this.disabled = false; }
+  });
+  $('rg-previa').addEventListener('click', async function(){
+    this.disabled = true; var box = $('rg-previa-box'); box.hidden = false; box.textContent = 'Calculando…';
+    try {
+      await rgGravar();
+      var p = await rgFn({ acao: 'regua-previa' });
+      if (!p.dias.length){ box.textContent = 'Nenhum aviso previsto para os próximos dias.'; return; }
+      var ETQ2 = { designacao: 'Designação', d10: '10 dias depois', h10: '10 antes', h5: '5 antes', h1: 'Véspera' };
+      box.innerHTML = '<table class="regua-prev"><thead><tr><th>Dia</th><th>Mensagens</th><th>Etapas</th></tr></thead><tbody>' + p.dias.map(function(d){
+        var dd = d.dia.split('-'); var w = DOW[new Date(+dd[0], +dd[1] - 1, +dd[2]).getDay()];
+        return '<tr><td>' + w + ' ' + dd[2] + '/' + dd[1] + '</td><td class="n">' + d.total + (d.sobra ? ' <span class="pill warn">+' + d.sobra + ' passam para o dia seguinte</span>' : '') + '</td><td>' + Object.keys(d.porEtapa).map(function(k){ return ETQ2[k] + ': ' + d.porEtapa[k]; }).join(' · ') + '</td></tr>';
+      }).join('') + '</tbody></table><span class="hint">Previsão com o limite de ' + p.porDia + ' por dia para ' + p.numeros + ' números com audiência futura. Quem já foi avisado numa etapa não recebe de novo.</span>';
+    } catch(e){ box.textContent = 'Não foi possível calcular: ' + e.message; }
+    finally { this.disabled = false; }
+  });
+  $('rg-teste-num').addEventListener('input', function(e){ e.target.value = maskTel(e.target.value); });
+  $('rg-teste').addEventListener('click', async function(){
+    var n = $('rg-teste-num').value; if (digits(n).length < 10){ $('rg-teste-num').focus(); toast('Informe seu WhatsApp com DDD'); return; }
+    var etapa = $('rg-teste-etapa').value, t = $('rg-t-' + etapa);
+    this.disabled = true;
+    try { var r = await rgFn({ acao: 'regua-teste', etapa: etapa, numero: n, conexao: $('rg-conexao').value, modelo: t ? t.value : '' }); toast(r.ok ? 'Teste enviado. Confira no seu WhatsApp.' : 'Teste não enviado: ' + (r.erro || '')); }
+    catch(e){ toast('Teste não enviado: ' + e.message); }
     finally { this.disabled = false; }
   });
 

@@ -292,6 +292,14 @@ header.top h1{margin:3px 0 0;font-size:24px;line-height:1.2;font-weight:700;lett
 .ls-parts{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--ink-2)}
 .ls-parts span{display:inline-flex;align-items:center;gap:6px}
 .conv-btn{margin-left:auto;padding:6px 12px;font-size:12.5px}
+.pill.meio{background:var(--soft);color:var(--ink-2);border:1px solid var(--line)}
+.pill.meio-whatsapp{background:var(--green-soft);color:var(--green);border-color:transparent}
+.pill.meio-convite{background:var(--blue-soft);color:var(--blue);border-color:transparent}
+.pill.meio-prospectador{background:var(--amber-soft);color:var(--amber);border-color:transparent}
+.meios{display:flex;flex-wrap:wrap;gap:8px}
+.meios label{display:flex;align-items:center;gap:6px;border:1px solid var(--line-2);border-radius:9px;padding:7px 11px;cursor:pointer;font-weight:600;font-size:13px}
+.meios input{margin:0}
+.meios label:has(input:checked){border-color:var(--blue);background:var(--blue-soft)}
 .wa-btn{padding:6px 12px;font-size:12.5px}
 .wa-log{max-height:180px;overflow:auto;font-size:12.5px;background:var(--soft);border:1px solid var(--line);border-radius:9px;padding:8px 10px;white-space:pre-wrap}
 .wa-prev{white-space:pre-wrap;font-size:13px;background:var(--soft);border:1px solid var(--line);border-radius:9px;padding:10px 12px}
@@ -535,6 +543,16 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
               <button type="button" class="day-chip tnum" id="fb-dia" hidden></button>
             </div>
             <div class="fb-group">
+              <span class="fb-lbl">Meio do aviso</span>
+              <div class="seg" id="seg-meio" role="group" aria-label="Meio do aviso">
+                <button type="button" data-v="todos" aria-pressed="true">Todos <span class="n" data-n="meio:todos"></span></button>
+                <button type="button" data-v="whatsapp" aria-pressed="false"><i class="dot ok"></i>WhatsApp <span class="n" data-n="meio:whatsapp"></span></button>
+                <button type="button" data-v="convite" aria-pressed="false"><i class="dot" style="background:var(--blue)"></i>Convite <span class="n" data-n="meio:convite"></span></button>
+                <button type="button" data-v="prospectador" aria-pressed="false"><i class="dot warn"></i>Prospectador <span class="n" data-n="meio:prospectador"></span></button>
+                <button type="button" data-v="outro" aria-pressed="false" class="sub">Ligação / pessoalmente <span class="n" data-n="meio:outro"></span></button>
+              </div>
+            </div>
+            <div class="fb-group">
               <span class="fb-lbl">Telefone</span>
               <div class="seg" id="seg-tel" role="group" aria-label="Telefone">
                 <button type="button" data-v="todos" aria-pressed="true">Todos <span class="n" data-n="tel:todos"></span></button>
@@ -672,7 +690,8 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
         <select id="f-situacao"><option value="pendente">Não avisado</option><option value="avisado">Avisado</option><option value="sem_contato">Sem contato</option></select></div>
       <div class="field"><label for="f-resp">Responsável pelo aviso</label><select id="f-resp"><option value="">Sem responsável</option></select></div>
       <div class="field"><label for="f-avisoem">Data do aviso</label><input id="f-avisoem" type="date"></div>
-      <div class="field full"><label for="f-avisadoa">Avisado a quem</label><input id="f-avisadoa" placeholder="Ex.: o próprio cliente, a filha, a sra. Cristiane"></div>
+      <div class="field"><label for="f-meio">Meio do aviso</label><select id="f-meio"><option value="">Não informado</option><option value="whatsapp">WhatsApp</option><option value="convite">Convite</option><option value="prospectador">Prospectador</option><option value="ligacao">Ligação</option><option value="pessoalmente">Pessoalmente</option></select></div>
+      <div class="field"><label for="f-avisadoa">Avisado a quem / observação</label><input id="f-avisadoa" placeholder="Ex.: avisado ao irmão, a filha recebeu"></div>
 
       <div class="section-lbl">Após a audiência</div>
       <div class="field"><label for="f-comp">Comparecimento à audiência</label><select id="f-comp"><option value="">Não informado</option><option value="compareceu">Compareceu</option><option value="faltou">Faltou</option></select></div>
@@ -718,6 +737,31 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
 </dialog>
 
 
+
+<dialog id="dlg-aviso">
+  <form class="f" id="form-aviso" novalidate>
+    <div class="f-head"><div class="ph-tile" style="margin:0"><svg class="i"><use href="#i-check"/></svg></div><h2 id="av-title">Registrar aviso</h2></div>
+    <div class="f-body">
+      <div class="field full"><label>Como foi avisado?</label>
+        <div class="meios" id="av-meios">
+          <label><input type="radio" name="av-meio" value="whatsapp">WhatsApp</label>
+          <label><input type="radio" name="av-meio" value="convite">Convite</label>
+          <label><input type="radio" name="av-meio" value="prospectador">Prospectador</label>
+          <label><input type="radio" name="av-meio" value="ligacao">Ligação</label>
+          <label><input type="radio" name="av-meio" value="pessoalmente">Pessoalmente</label>
+        </div>
+      </div>
+      <div class="field full"><label for="av-obs">Avisado a quem / observação</label><input id="av-obs" autocomplete="off" placeholder="Ex.: avisado ao irmão, a filha recebeu, o próprio cliente"><span class="hint">Opcional. Aparece na coluna Aviso, embaixo da data.</span></div>
+      <div class="field"><label for="av-data">Data do aviso</label><input id="av-data" type="date"></div>
+    </div>
+    <div class="f-foot">
+      <div class="right">
+        <button class="btn" type="button" id="av-cancel">Cancelar</button>
+        <button class="btn primary" type="submit" id="av-save">Marcar como avisado</button>
+      </div>
+    </div>
+  </form>
+</dialog>
 
 <dialog id="dlg-whats">
   <form class="f" id="form-whats" novalidate>
@@ -765,7 +809,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
 
 <script>
 (function(){
-  var state = { hora: '', rows: [], prosp: [], resp: '', db: null, filter: 'todos', aud: 'todas', tel: 'todos', dia: '', q: '', editing: null, limit: 100, view: 'c',
+  var state = { hora: '', rows: [], prosp: [], resp: '', db: null, filter: 'todos', aud: 'todas', tel: 'todos', meio: 'todos', dia: '', q: '', editing: null, limit: 100, view: 'c',
     p: { res: '', rec: '', pag: '', conc: '', comp: '', q: '' }, r: { f: '', q: '', mes: '' } };
   var $ = function(id){ return document.getElementById(id); };
   var memId = 0;
@@ -888,6 +932,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     if (!passAud(r, o.aud || state.aud)) return false;
     if (!passResp(r, 'resp' in o ? o.resp : state.resp)) return false;
     if (!passTel(r, o.tel || state.tel)) return false;
+    if (!passMeio(r, o.meio || state.meio)) return false;
     if (state.q){
       var q = state.q.toLowerCase(), qd = digits(state.q);
       var hay = [r.nome, r.endereco, r.avisadoA, r.tese, r.rg, prospName(r.responsavelId)].join(' ').toLowerCase();
@@ -903,6 +948,8 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     return '<div class="cell-stack"><div class="val">' + fmtDate(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') + '</div>' +
            '<span class="pill ' + cls + '">' + relLabel(n) + '</span></div>';
   }
+  var MEIOS = { whatsapp: 'WhatsApp', convite: 'Convite', prospectador: 'Prospectador', ligacao: 'Ligação', pessoalmente: 'Pessoalmente' };
+  function passMeio(r, f){ if (!f || f === 'todos') return true; if (!r.avisado) return false; if (f === 'outro') return r.meioAviso === 'ligacao' || r.meioAviso === 'pessoalmente'; return r.meioAviso === f; }
   function avisoCell(r){
     var n = daysUntil(r.audData), s = sit(r);
     var pend = !r.avisado && r.audData && n >= 0;
@@ -911,6 +958,8 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     if (s === 'sem_contato') extra = '<span class="pill crit">Sem contato</span>';
     var pn = prospName(r.responsavelId);
     var resp = pn ? '<div class="small">Resp.: <b>' + esc(pn) + '</b></div>' : (pend ? '<div class="small">Sem responsável</div>' : '');
+    var meio = r.avisado && r.meioAviso ? '<span class="pill meio meio-' + esc(r.meioAviso) + '">' + esc(MEIOS[r.meioAviso] || r.meioAviso) + '</span>' : '';
+    extra += meio;
     var when = r.avisado && (r.avisadoEm || r.avisadoA) ? '<div class="small">' + (r.avisadoEm ? 'em ' + fmtAny(r.avisadoEm) : '') + (r.avisadoA ? (r.avisadoEm ? ' · ' : '') + esc(r.avisadoA) : '') + '</div>' : '';
     return '<div class="cell-stack"><button type="button" class="toggle' + (pend ? ' pending' : '') + '" data-act="aviso" data-id="' + esc(r.id) + '" aria-pressed="' + (r.avisado ? 'true' : 'false') + '"><span class="dot"></span>' + label + '</button>' + extra + when + resp + '</div>';
   }
@@ -944,7 +993,12 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
 
     $('s-avis').textContent = avis.length;
     $('s-avis-c').textContent = pct(avis.length, fut.length) + '% das audiências marcadas';
-    $('v-avis').innerHTML = stackBar([{ l: 'Avisados', n: avis.length, c: cssVar('--green') }, { l: 'Faltam', n: pend, c: cssVar('--line-2') }]);
+    var porMeio = function(m){ return avis.filter(function(r){ return r.meioAviso === m; }).length; };
+    var mw = porMeio('whatsapp'), mc = porMeio('convite'), mp = porMeio('prospectador'), mo = avis.length - mw - mc - mp;
+    var partsAv = [{ l: 'WhatsApp', n: mw, c: cssVar('--green') }, { l: 'Convite', n: mc, c: cssVar('--blue') }, { l: 'Prospectador', n: mp, c: cssVar('--amber') }];
+    if (mo) partsAv.push({ l: 'Outros', n: mo, c: cssVar('--purple') });
+    partsAv.push({ l: 'Faltam', n: pend, c: cssVar('--line-2') });
+    $('v-avis').innerHTML = stackBar(partsAv);
 
     $('s-pend').textContent = pend;
     $('s-pend-c').textContent = pend ? 'precisam de contato antes da audiência' : 'Todos os clientes foram avisados';
@@ -984,7 +1038,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       var p = el.dataset.n.split(':'), o = {}; o[p[0]] = p[1];
       el.textContent = rows.filter(function(r){ return matches(r, o); }).length;
     });
-    [['seg-aviso', state.filter], ['seg-aud', state.aud], ['seg-tel', state.tel]].forEach(function(g){
+    [['seg-aviso', state.filter], ['seg-aud', state.aud], ['seg-tel', state.tel], ['seg-meio', state.meio]].forEach(function(g){
       Array.prototype.forEach.call($(g[0]).children, function(b){ b.setAttribute('aria-pressed', b.dataset.v === g[1] ? 'true' : 'false'); });
     });
     var sel = $('fb-resp'), cnt = function(v){ return rows.filter(function(r){ return matches(r, { resp: v }); }).length; };
@@ -995,7 +1049,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     var dia = $('fb-dia');
     dia.hidden = !state.dia;
     if (state.dia) dia.innerHTML = 'Dia ' + fmtShort(state.dia) + (state.hora ? ' · ' + esc(state.hora) : '') + ' <span aria-hidden="true">×</span>';
-    var active = state.filter !== 'todos' || state.aud !== 'todas' || state.tel !== 'todos' || !!state.dia || !!state.q || !!state.resp;
+    var active = state.filter !== 'todos' || state.aud !== 'todas' || state.tel !== 'todos' || state.meio !== 'todos' || !!state.dia || !!state.q || !!state.resp;
     $('fb-clear').hidden = !active;
     $('fb-count').textContent = active ? 'Mostrando ' + shown + ' de ' + rows.length : rows.length + ' clientes';
   }
@@ -1011,6 +1065,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     if (state.aud === 'semana') extra.push('próximos 7 dias'); else if (state.aud === 'sem') extra.push('sem data');
     if (state.resp) extra.push(state.resp === '-' ? 'sem responsável' : prospName(state.resp));
     if (state.tel === 'sem') extra.push('sem telefone'); else if (state.tel === 'com') extra.push('com telefone');
+    if (state.meio !== 'todos') extra.push(state.meio === 'outro' ? 'avisados por ligação ou pessoalmente' : 'avisados por ' + (MEIOS[state.meio] || state.meio).toLowerCase());
     if (state.q) extra.push('busca "' + state.q + '"');
     $('list-sum').innerHTML =
       '<div class="ls-main"><span class="ls-t">' + esc(titulo) + (extra.length ? ' <em>· ' + esc(extra.join(' · ')) + '</em>' : '') + '</span>' +
@@ -1335,6 +1390,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     $('f-resp').value = r && prospById(r.responsavelId) ? r.responsavelId : '';
     $('f-avisoem').value = r && r.avisadoEm ? String(r.avisadoEm).slice(0, 10) : '';
     $('f-avisadoa').value = r ? r.avisadoA || '' : '';
+    $('f-meio').value = r && r.meioAviso ? r.meioAviso : '';
     $('f-proc').value = r ? r.processo || '' : '';
     $('f-uc').value = r ? r.uc || '' : '';
     $('f-periodo').value = r ? r.periodo || '' : '';
@@ -1384,7 +1440,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     var data = Object.assign({}, prev, {
       nome: nome, cpf: $('f-cpf').value.trim(), rg: $('f-rg').value.trim(), endereco: $('f-end').value.trim(),
       contato: $('f-contato').value.trim(), audData: $('f-data').value || '', audHora: $('f-hora').value || '',
-      avisado: avisado, situacao: situacao, responsavelId: $('f-resp').value || (!state.editing && prospForAddress($('f-end').value) ? prospForAddress($('f-end').value).id : ''), avisadoEm: avisoEm || null, avisadoA: $('f-avisadoa').value.trim(),
+      avisado: avisado, situacao: situacao, responsavelId: $('f-resp').value || (!state.editing && prospForAddress($('f-end').value) ? prospForAddress($('f-end').value).id : ''), avisadoEm: avisoEm || null, avisadoA: $('f-avisadoa').value.trim(), meioAviso: avisado ? $('f-meio').value : (prev.meioAviso || ''),
       processo: $('f-proc').value.trim(), uc: $('f-uc').value.trim(), periodo: $('f-periodo').value.trim(), tese: $('f-tese').value.trim(),
       protocolo: $('f-protocolo').value || '', contatadoRetorno: $('f-contatado').value === 'sim' ? (prev.contatadoRetorno || iso(new Date())) : null,
       comparecimento: $('f-comp').value, motivoFalta: $('f-comp').value === 'faltou' ? $('f-falta').value.trim() : '',
@@ -1415,6 +1471,10 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     var b = e.target.closest('button'); if (!b) return;
     state.aud = b.dataset.v; state.limit = 100; renderList();
   });
+  $('seg-meio').addEventListener('click', function(e){
+    var b = e.target.closest('button'); if (!b) return;
+    state.meio = b.dataset.v; state.limit = 100; renderList();
+  });
   $('seg-tel').addEventListener('click', function(e){
     var b = e.target.closest('button'); if (!b) return;
     state.tel = b.dataset.v; state.limit = 100; renderList();
@@ -1427,7 +1487,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   $('fb-resp').addEventListener('change', function(e){ state.resp = e.target.value; state.limit = 100; renderList(); });
   $('fb-dia').addEventListener('click', function(){ state.dia = ''; state.hora = ''; state.limit = 100; renderPauta(); renderList(); });
   $('fb-clear').addEventListener('click', function(){
-    state.filter = 'todos'; state.aud = 'todas'; state.tel = 'todos'; state.dia = ''; state.hora = ''; state.q = ''; state.resp = ''; $('q').value = ''; state.limit = 100;
+    state.filter = 'todos'; state.aud = 'todas'; state.tel = 'todos'; state.meio = 'todos'; state.dia = ''; state.hora = ''; state.q = ''; state.resp = ''; $('q').value = ''; state.limit = 100;
     renderPauta(); renderList();
   });
   $('pauta').addEventListener('click', function(e){
@@ -1458,6 +1518,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       catch (e2){ toast('Pasta não criada: ' + driveErr(e2)); b.disabled = false; b.lastChild.textContent = 'Criar pasta'; }
       return;
     }
+    if (b.dataset.act === 'aviso' && !r.avisado){ abrirAviso(r); return; }
     if (b.dataset.act === 'aviso'){
       var v = !r.avisado;
       // remember the pre-notice situation (e.g. sem contato) so un-marking restores it
@@ -1488,6 +1549,33 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     }
   }
   ['list', 'p-list', 'r-list'].forEach(function(id){ $(id).addEventListener('click', listClick); });
+
+  /* ---------- registrar aviso: meio + observação ---------- */
+  var dlgA = $('dlg-aviso'), avCliente = null;
+  function abrirAviso(r){
+    avCliente = r;
+    $('av-title').textContent = 'Registrar aviso: ' + (r.nome || '');
+    Array.prototype.forEach.call(document.querySelectorAll('input[name="av-meio"]'), function(x){ x.checked = x.value === (r.meioAviso || (r.contato ? 'whatsapp' : 'convite')); });
+    $('av-obs').value = r.avisadoA || ''; $('av-data').value = iso(new Date());
+    dlgA.showModal(); setTimeout(function(){ $('av-obs').focus(); }, 30);
+  }
+  $('av-cancel').addEventListener('click', function(){ dlgA.close(); });
+  $('form-aviso').addEventListener('submit', async function(e){
+    e.preventDefault();
+    var r = avCliente; if (!r) return;
+    var m = document.querySelector('input[name="av-meio"]:checked');
+    if (!m){ toast('Escolha como o cliente foi avisado'); return; }
+    var patch = { avisado: true, situacao: 'avisado', situacaoAnterior: sit(r), avisadoEm: $('av-data').value || iso(new Date()), meioAviso: m.value, avisadoA: $('av-obs').value.trim(), atualizadoEm: new Date().toISOString() };
+    var antes = { avisado: !!r.avisado, situacao: sit(r), situacaoAnterior: r.situacaoAnterior || null, avisadoEm: r.avisadoEm || null, meioAviso: r.meioAviso || '', avisadoA: r.avisadoA || '', atualizadoEm: new Date().toISOString() };
+    $('av-save').disabled = true;
+    try {
+      await patchRow(r.id, patch); dlgA.close();
+      toast('Avisado por ' + (MEIOS[m.value] || m.value).toLowerCase() + ': ' + (r.nome || ''), 'Desfazer', function(){
+        patchRow(r.id, antes).then(function(){ toast('Desfeito: ' + (r.nome || '')); }, function(e3){ toast(errMsg(e3)); });
+      });
+    } catch(err){ toast(errMsg(err)); }
+    finally { $('av-save').disabled = false; }
+  });
   var VIEWS = { c: ['tab-clientes', 'view-clientes'], p: ['tab-pos', 'view-pos'], r: ['tab-ret', 'view-ret'], g: ['tab-prosp', 'view-prosp'], e: ['tab-equipe', 'view-equipe'], x: ['tab-contest', 'view-contest'] };
   function showTab(which){
     state.view = which;

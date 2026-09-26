@@ -727,8 +727,9 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       <div class="field full"><label for="wa-conexao">Número que envia (LiderHub, workspace Pós-venda)</label><select id="wa-conexao"><option value="">Carregando conexões…</option></select><span class="hint" id="wa-conexao-hint"></span></div>
       <div class="field full"><label for="wa-modelo">Mensagem</label><textarea id="wa-modelo"></textarea><span class="hint">{nome} vira o nome do cliente e {audiencia} vira a data e o horário (30 minutos antes do horário real, como no convite).</span></div>
       <div class="field full"><label>Como fica para o primeiro cliente</label><div class="wa-prev" id="wa-prev"></div></div>
-      <div class="field"><label for="wa-intervalo">Intervalo entre mensagens</label><select id="wa-intervalo"><option value="15">15 segundos</option><option value="30" selected>30 segundos</option><option value="60">1 minuto</option></select><span class="hint" id="wa-duracao"></span></div>
+      <div class="field"><label for="wa-dia">Mensagens por dia</label><input id="wa-dia" type="number" min="10" max="150" step="5" value="55" class="tnum"><span class="hint" id="wa-duracao">De segunda a sexta, das 8h às 18h (horário de Manaus), espalhadas ao longo do dia com intervalos sorteados.</span></div>
       <div class="field"><label for="wa-teste">Seu WhatsApp para teste</label><input id="wa-teste" inputmode="tel" placeholder="(97) 00000-0000" class="tnum"><span class="hint">Recebe a mensagem do primeiro cliente, só para conferir.</span></div>
+      <div class="field full" id="wa-plano-wrap" hidden><label>Agenda de envio</label><div class="wa-prev" id="wa-plano"></div></div>
       <div class="field full" id="wa-log-wrap" hidden><label>Andamento</label><div class="wa-log" id="wa-log" role="status"></div></div>
     </div>
     <div class="f-foot">
@@ -1780,7 +1781,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
 
   /* ---------- lembrete por WhatsApp (LiderHub) ---------- */
   var WA_MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
-  var WA_PADRAO = 'Olá, {nome}! Aqui é do escritório do Dr. Thiago Litaiff.\n\nPassando para lembrar da audiência contra a Âmbar Energia:\n{audiencia}\n📍 *Novo Fórum de Justiça da Comarca de Alvarães*\n\nÉ obrigatório levar documento com foto (RG ou CNH). Se faltar, o processo pode ser encerrado.\n\nQualquer dúvida, é só responder esta mensagem.';
+  var WA_PADRAO = 'Olá, {nome}! Aqui é do escritório do Dr. Thiago Litaiff.\n\nPassando para lembrar da audiência contra a Âmbar Energia:\n{audiencia}\n📍 *Novo Fórum de Justiça da Comarca de Alvarães*\n\nÉ obrigatório levar documento com foto (RG ou CNH). Se faltar, o processo pode ser encerrado.\n\nPor favor, responda *OK* para confirmar que recebeu. Qualquer dúvida, é só responder esta mensagem.';
   function waNumero(c){ var d = String(c || '').replace(/\D/g, ''); if (d.indexOf('55') === 0 && d.length >= 12) d = d.slice(2); if (d.charAt(0) === '0') d = d.slice(1); if (d.length === 11 && d.charAt(2) === '9') d = d.slice(0, 2) + d.slice(3); return d.length === 10 ? d : ''; }
   function waData(iso){ var p = iso.split('-'); return p[2] + ' de ' + WA_MESES[+p[1] - 1] + ' de ' + p[0] + ' (' + PDF_DIAS[new Date(+p[0], +p[1] - 1, +p[2]).getDay()] + ')'; }
   function waPrimeiro(n){ return String(n || '').trim().split(/\s+/)[0] || ''; }
@@ -1810,23 +1811,67 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     });
   }
   function waLog(t){ $('wa-log-wrap').hidden = false; var l = $('wa-log'); l.textContent += t + '\n'; l.scrollTop = l.scrollHeight; }
+  // Manaus is UTC-4 all year (no daylight saving)
+  var MAO = -4 * 3600000;
+  function maoParts(t){ var d = new Date(t + MAO); return { y: d.getUTCFullYear(), m: d.getUTCMonth(), d: d.getUTCDate(), h: d.getUTCHours(), dow: d.getUTCDay() }; }
+  function maoTime(y, m, d, h, min){ return Date.UTC(y, m, d, h, min || 0) - MAO; }
+  function maoFmt(t){ var p = new Date(t + MAO); return String(p.getUTCDate()).padStart(2, '0') + '/' + String(p.getUTCMonth() + 1).padStart(2, '0') + ' ' + String(p.getUTCHours()).padStart(2, '0') + ':' + String(p.getUTCMinutes()).padStart(2, '0'); }
+  function waDiaSemana(t){ return DOW[maoParts(t).dow]; }
+  // send slots: weekdays 08:00–18:00 Manaus, up to 'porDia' per day, evenly spread with random jitter
+  function waSlots(qtd, porDia){
+    var out = [], agora = Date.now() + 3 * 60000, p = maoParts(agora), dia = maoTime(p.y, p.m, p.d, 0);
+    for (var guarda = 0; out.length < qtd && guarda < 60; guarda++, dia += 86400000){
+      var q = maoParts(dia);
+      if (q.dow === 0 || q.dow === 6) continue;
+      var ini = Math.max(maoTime(q.y, q.m, q.d, 8), agora), fim = maoTime(q.y, q.m, q.d, 18);
+      if (ini >= fim - 10 * 60000) continue;
+      var n = Math.min(porDia, qtd - out.length), passo = (fim - ini) / n;
+      for (var k = 0; k < n; k++) out.push(Math.round(ini + passo * k + passo * (0.15 + Math.random() * 0.7)));
+    }
+    return out;
+  }
+  function waVespera(c){ var p = c.audData.split('-'); return maoTime(+p[0], +p[1] - 1, +p[2], 0); } // must go out before the hearing day starts
+  // existing conversations first; every message must go before its hearing day
+  function waMontarPlano(grupos, existentes, porDia){
+    var slots = waSlots(grupos.length, porDia);
+    function tentar(ordem){
+      var itens = ordem.map(function(g, i){ return { g: g, quando: slots[i], existe: !!existentes[g.numero] }; });
+      return { itens: itens, atrasados: itens.filter(function(x){ return !x.quando || x.quando >= waVespera(x.g.clientes[0]); }) };
+    }
+    var porData = function(a, b){ return a.clientes[0].audData.localeCompare(b.clientes[0].audData); };
+    var quentes = grupos.filter(function(g){ return existentes[g.numero]; }).sort(porData), frios = grupos.filter(function(g){ return !existentes[g.numero]; }).sort(porData);
+    var plano = tentar(quentes.concat(frios));
+    if (plano.atrasados.length){ var b = tentar(grupos.slice().sort(function(a, c){ return porData(a, c) || (existentes[c.numero] ? 1 : 0) - (existentes[a.numero] ? 1 : 0); })); if (b.atrasados.length <= plano.atrasados.length) plano = b; }
+    return plano;
+  }
+  var waPlano = null;
+  function waPlanoTexto(plano){
+    var dias = {};
+    plano.itens.forEach(function(x){ var k = maoFmt(x.quando).slice(0, 5); (dias[k] = dias[k] || { n: 0, q: 0, dow: waDiaSemana(x.quando), ini: x.quando, fim: x.quando }); var d = dias[k]; d.n++; if (x.existe) d.q++; d.ini = Math.min(d.ini, x.quando); d.fim = Math.max(d.fim, x.quando); });
+    var linhas = Object.keys(dias).map(function(k){ var d = dias[k]; return '• ' + d.dow + ' ' + k + ': ' + d.n + ' mensagens, das ' + maoFmt(d.ini).slice(6) + ' às ' + maoFmt(d.fim).slice(6) + (d.q ? ' (' + d.q + ' de quem já conversou)' : ''); });
+    var quentes = plano.itens.filter(function(x){ return x.existe; }).length;
+    return linhas.join('\n') + '\n\n' + quentes + ' clientes já têm conversa com este número e vão primeiro.' +
+      (plano.atrasados.length ? '\n⚠ ' + plano.atrasados.length + ' mensagens não cabem antes da audiência com esse limite por dia. Aumente o limite ou elas ficam de fora.' : '\nTodas saem antes do dia da audiência de cada cliente.');
+  }
   function waInfo(){
     var g = state.whatsGrupos || [], cli = g.reduce(function(t, x){ return t + x.clientes.length; }, 0), comp = g.filter(function(x){ return x.clientes.length > 1; }).length;
     var ja = state.rows.filter(function(r){ return r.lembreteWhats && r.lembreteWhats.ok; }).length;
     $('wa-info').innerHTML = '<b class="tnum">' + g.length + (g.length === 1 ? ' mensagem' : ' mensagens') + '</b> para <b class="tnum">' + cli + '</b> clientes da lista atual com audiência marcada e telefone' +
-      (comp ? ' (' + comp + ' números são de mais de um cliente e recebem uma mensagem só)' : '') + '.' + (ja ? ' ' + ja + ' clientes já receberam o lembrete e ficam de fora.' : '');
-    var seg = +$('wa-intervalo').value, min = Math.ceil(g.length * seg / 60);
-    $('wa-duracao').textContent = 'As mensagens saem ao longo de cerca de ' + (min >= 60 ? Math.floor(min / 60) + 'h' + String(min % 60).padStart(2, '0') : min + ' min') + '.';
+      (comp ? ' (' + comp + ' números são de mais de um cliente e recebem uma mensagem só)' : '') + '.' + (ja ? ' ' + ja + ' clientes já têm lembrete agendado ou enviado e ficam de fora.' : '');
     $('wa-prev').textContent = g.length ? waTexto($('wa-modelo').value, g[0]) : 'Ninguém para enviar nesta lista.';
-    $('wa-go').textContent = waArmado ? 'Confirmar envio de ' + g.length + ' mensagens' : 'Enviar para ' + g.length;
-    $('wa-go').disabled = !g.length || waRodando || !$('wa-conexao').value;
+    var n = waPlano ? waPlano.itens.length - waPlano.atrasados.length : 0;
+    $('wa-go').textContent = !waPlano ? 'Montar agenda' : waArmado ? 'Confirmar agendamento de ' + n + ' mensagens' : 'Agendar ' + n + ' mensagens';
+    $('wa-go').disabled = !g.length || waRodando || !$('wa-conexao').value || (waPlano && !n);
+    $('wa-plano-wrap').hidden = !waPlano;
+    if (waPlano) $('wa-plano').textContent = waPlanoTexto(waPlano);
   }
+  function waDesarmar(){ waArmado = false; waPlano = null; $('wa-go').classList.remove('armed'); waInfo(); }
   async function openWhats(){
     if (!isAdmin()) return;
     waFn = waFn || function(b){ return window.__qeSB.functions.invoke('lembrete-whatsapp', { body: b }); };
     if (!$('wa-modelo').value) $('wa-modelo').value = WA_PADRAO;
     waArmado = false; $('wa-go').classList.remove('armed');
-    if (!waRodando){ $('wa-log').textContent = ''; $('wa-log-wrap').hidden = true; }
+    if (!waRodando){ waPlano = null; $('wa-log').textContent = ''; $('wa-log-wrap').hidden = true; }
     waInfo(); dlgW.showModal();
     var sel = $('wa-conexao'); if (sel.dataset.ok) return;
     sel.innerHTML = '<option value="">Carregando conexões…</option>'; $('wa-conexao-hint').textContent = '';
@@ -1842,7 +1887,8 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   }
   var dlgW = $('dlg-whats');
   $('wa-cancel').addEventListener('click', function(){ dlgW.close(); });
-  ['wa-modelo', 'wa-intervalo', 'wa-conexao'].forEach(function(id){ $(id).addEventListener('input', function(){ waArmado = false; $('wa-go').classList.remove('armed'); waInfo(); }); });
+  $('wa-modelo').addEventListener('input', function(){ waArmado = false; $('wa-go').classList.remove('armed'); waInfo(); });
+  ['wa-dia', 'wa-conexao'].forEach(function(id){ $(id).addEventListener('input', waDesarmar); });
   $('wa-teste').addEventListener('input', function(e){ e.target.value = maskTel(e.target.value); });
   $('wa-teste-go').addEventListener('click', async function(){
     var g = (state.whatsGrupos || [])[0], n = $('wa-teste').value;
@@ -1860,27 +1906,45 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   $('form-whats').addEventListener('submit', async function(e){
     e.preventDefault();
     if (waRodando) return;
-    if (!waArmado){ waArmado = true; $('wa-go').classList.add('armed'); waInfo(); return; }
-    var grupos = (state.whatsGrupos || []).slice(), modelo = $('wa-modelo').value, conexao = $('wa-conexao').value, seg = +$('wa-intervalo').value;
-    waRodando = true; waArmado = false; $('wa-go').classList.remove('armed'); waInfo();
-    var base = Date.now() + 60000, ok = 0, falhas = 0;
-    waLog('Enviando ' + grupos.length + ' mensagens para o LiderHub…');
-    for (var i = 0; i < grupos.length; i += 8){
-      var lote = grupos.slice(i, i + 8);
-      var itens = lote.map(function(g, k){ return { chave: g.numero, numero: g.numero, nome: g.clientes.map(function(c){ return c.nome; }).join(' / '), texto: waTexto(modelo, g), agendarEm: new Date(base + (i + k) * seg * 1000).toISOString() }; });
-      try {
-        var d = await waChamar({ acao: 'enviar', conexao: conexao, itens: itens });
-        for (var j = 0; j < (d.resultados || []).length; j++){
-          var r = d.resultados[j], g = lote.filter(function(x){ return x.numero === r.chave; })[0]; if (!g) continue;
-          var reg = { em: new Date().toISOString(), ok: !!r.ok, numero: r.numero || g.numero, erro: r.ok ? '' : (r.erro || ''), agendadoPara: r.ok ? itens.filter(function(x){ return x.chave === r.chave; })[0].agendarEm : '' };
-          for (var c = 0; c < g.clientes.length; c++){ try { await patchRow(g.clientes[c].id, { lembreteWhats: reg }); } catch(e2){} }
-          if (r.ok) ok++; else { falhas++; waLog('Não enviado para ' + g.clientes.map(function(x){ return waPrimeiro(x.nome); }).join(', ') + ' (' + g.numero + '): ' + r.erro); }
-        }
-      } catch(err){ falhas += lote.length; waLog('Erro no lote ' + (i / 8 + 1) + ': ' + err.message); }
-      waLog('Andamento: ' + Math.min(i + 8, grupos.length) + ' de ' + grupos.length + ' (' + ok + ' agendadas, ' + falhas + ' com problema)');
+    var grupos = (state.whatsGrupos || []).slice(), conexao = $('wa-conexao').value, porDia = Math.max(10, Math.min(150, +$('wa-dia').value || 55));
+    // step 1: check who already has a conversation, then build the schedule
+    if (!waPlano){
+      waRodando = true; waInfo(); var existentes = {};
+      waLog('Verificando quem já conversou com este número (' + grupos.length + ' números)…');
+      for (var i = 0; i < grupos.length; i += 15){
+        var lote = grupos.slice(i, i + 15);
+        try {
+          var d = await waChamar({ acao: 'verificar', itens: lote.map(function(g){ return { chave: g.numero, numero: g.numero }; }) });
+          (d.resultados || []).forEach(function(r){ if (r.existe) existentes[r.chave] = true; });
+        } catch(err){ waLog('Não foi possível verificar um lote: ' + err.message); }
+        waLog('Verificados ' + Math.min(i + 15, grupos.length) + ' de ' + grupos.length);
+      }
+      waPlano = waMontarPlano(grupos, existentes, porDia);
+      waRodando = false; waLog('Agenda montada. Confira abaixo e clique em Agendar.'); waInfo();
+      return;
     }
-    waLog('Concluído. ' + ok + ' mensagens agendadas no LiderHub, começando em 1 minuto. ' + falhas + ' não foram agendadas.');
-    waRodando = false; waInfo();
+    // step 2: arm, step 3: confirm and schedule
+    if (!waArmado){ waArmado = true; $('wa-go').classList.add('armed'); waInfo(); return; }
+    var modelo = $('wa-modelo').value, validos = waPlano.itens.filter(function(x){ return waPlano.atrasados.indexOf(x) < 0; });
+    waRodando = true; waArmado = false; $('wa-go').classList.remove('armed'); waInfo();
+    var ok = 0, falhas = 0;
+    waLog('Agendando ' + validos.length + ' mensagens no LiderHub…');
+    for (var j = 0; j < validos.length; j += 8){
+      var parte = validos.slice(j, j + 8);
+      var itens = parte.map(function(x){ return { chave: x.g.numero, numero: x.g.numero, nome: x.g.clientes.map(function(c){ return c.nome; }).join(' / '), texto: waTexto(modelo, x.g), agendarEm: new Date(x.quando).toISOString() }; });
+      try {
+        var d2 = await waChamar({ acao: 'enviar', conexao: conexao, itens: itens });
+        for (var k = 0; k < (d2.resultados || []).length; k++){
+          var r = d2.resultados[k], x = parte.filter(function(y){ return y.g.numero === r.chave; })[0]; if (!x) continue;
+          var reg = { em: new Date().toISOString(), ok: !!r.ok, numero: r.numero || x.g.numero, erro: r.ok ? '' : (r.erro || ''), agendadoPara: r.ok ? new Date(x.quando).toISOString() : '', conversaExistente: x.existe };
+          for (var c = 0; c < x.g.clientes.length; c++){ try { await patchRow(x.g.clientes[c].id, { lembreteWhats: reg }); } catch(e2){} }
+          if (r.ok) ok++; else { falhas++; waLog('Não agendado para ' + x.g.clientes.map(function(y){ return waPrimeiro(y.nome); }).join(', ') + ' (' + x.g.numero + '): ' + r.erro); }
+        }
+      } catch(err2){ falhas += parte.length; waLog('Erro em um lote: ' + err2.message); }
+      waLog('Andamento: ' + Math.min(j + 8, validos.length) + ' de ' + validos.length + ' (' + ok + ' agendadas, ' + falhas + ' com problema)');
+    }
+    waLog('Concluído. ' + ok + ' mensagens agendadas no LiderHub. ' + falhas + ' não foram agendadas. Dá para acompanhar e cancelar na Central de Agendamentos do LiderHub.');
+    waRodando = false; waPlano = null; waInfo();
   });
 
 

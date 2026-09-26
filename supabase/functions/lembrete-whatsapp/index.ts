@@ -77,6 +77,21 @@ Deno.serve(async (req) => {
       return json({ conexoes });
     }
 
+    // quem já tem conversa com o número do workspace (conversa existente = contato quente, menor risco)
+    if (body.acao === 'verificar') {
+      const itens = Array.isArray(body.itens) ? body.itens.slice(0, 15) : [];
+      const resultados = [];
+      for (const it of itens) {
+        let existe = false, usado = '';
+        for (const n of variantes(it.numero)) {
+          const r = await lh(key, 'GET', '/v1/contacts?limit=1&number=' + encodeURIComponent(n));
+          if (r.ok && (r.dados?.contacts || []).length) { existe = true; usado = n; break; }
+        }
+        resultados.push({ chave: it.chave, existe, numero: usado });
+      }
+      return json({ resultados });
+    }
+
     if (body.acao === 'enviar') {
       const conexao = String(body.conexao || '');
       const itens = Array.isArray(body.itens) ? body.itens.slice(0, 10) : [];

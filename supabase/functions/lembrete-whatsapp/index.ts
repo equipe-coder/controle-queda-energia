@@ -45,8 +45,6 @@ function variantes(numero: string): string[] {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   try {
-    const key = Deno.env.get('LIDERHUB_KEY');
-    if (!key) return json({ erro: 'A chave do LiderHub ainda não foi configurada no Supabase (segredo LIDERHUB_KEY).' }, 500);
 
     // chave pública do projeto (a mesma do config.js do site)
     const publica = Deno.env.get('SUPABASE_ANON_KEY') || 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r';
@@ -55,6 +53,18 @@ Deno.serve(async (req) => {
     });
     const { data: funcao } = await sb.rpc('minha_funcao');
     if (funcao !== 'admin') return json({ erro: 'Só administradores podem enviar lembretes.' }, 403);
+
+    // chave salva pela aba Equipe (tabela segredos, lida só aqui com a chave de serviço); o segredo LIDERHUB_KEY continua valendo se existir
+    let key = Deno.env.get('LIDERHUB_KEY') || '';
+    if (!key) {
+      const servico = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+      if (servico) {
+        const adm = createClient(Deno.env.get('SUPABASE_URL')!, servico, { auth: { persistSession: false } });
+        const { data } = await adm.from('segredos').select('valor').eq('nome', 'liderhub').maybeSingle();
+        key = data?.valor || '';
+      }
+    }
+    if (!key) return json({ erro: 'A chave do LiderHub ainda não foi cadastrada. Cadastre na aba Equipe, em Integrações.' }, 400);
 
     const body = await req.json().catch(() => ({}));
 

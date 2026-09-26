@@ -2064,20 +2064,35 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   });
 
   /* ---------- integração LiderHub: chave gravada no banco, nunca lida de volta ---------- */
+  var LH_PONTOS = '';
   async function lhStatus(){
     var r = await SB.rpc('status_segredo', { p_nome: 'liderhub' });
     var d = r.data && r.data[0];
+    // saved key: dots + last 4 characters in the field, like the BI
+    LH_PONTOS = d ? '•'.repeat(28) + d.final : '';
+    if (!$('lh-chave').dataset.editando){ $('lh-chave').value = LH_PONTOS; $('lh-chave').classList.toggle('mask', !LH_PONTOS); }
     $('lh-status').textContent = r.error ? 'Não foi possível verificar agora.' : d ? 'Chave cadastrada (termina em ••' + d.final + ') em ' + new Date(d.atualizado_em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) + (d.atualizado_por ? ' por ' + d.atualizado_por : '') + '.' : 'Nenhuma chave cadastrada. O lembrete por WhatsApp só funciona depois de salvar a chave.';
   }
-  $('lh-eye').addEventListener('click', function(){ var i = $('lh-chave'), m = i.classList.toggle('mask') === false; this.querySelector('use').setAttribute('href', m ? '#i-eyeoff' : '#i-eye'); this.title = m ? 'Esconder chave' : 'Mostrar chave'; });
+  $('lh-eye').addEventListener('click', function(){ var i = $('lh-chave'); if (LH_PONTOS && i.value === LH_PONTOS) return;
+    var m = i.classList.toggle('mask') === false; if (m) this.dataset.aberto = '1'; else delete this.dataset.aberto; this.querySelector('use').setAttribute('href', m ? '#i-eyeoff' : '#i-eye'); this.title = m ? 'Esconder chave' : 'Mostrar chave'; });
   // pasted keys often come with spaces or line breaks around them
-  $('lh-chave').addEventListener('input', function(){ var v = this.value.replace(/\s+/g, ''); if (v !== this.value) this.value = v; });
+  $('lh-chave').addEventListener('input', function(){
+    this.dataset.editando = '1';
+    var v = this.value.replace(/•/g, '').replace(/\s+/g, '');
+    if (v !== this.value) this.value = v;
+    if (!$('lh-eye').dataset.aberto) this.classList.add('mask');
+  });
+  $('lh-chave').addEventListener('focus', function(){ if (LH_PONTOS && this.value === LH_PONTOS) this.select(); });
+  $('lh-chave').addEventListener('blur', function(){
+    if (!this.value && LH_PONTOS){ delete this.dataset.editando; this.value = LH_PONTOS; this.classList.remove('mask'); }
+  });
   $('form-lh').addEventListener('submit', async function(e){
     e.preventDefault();
+    if (LH_PONTOS && $('lh-chave').value === LH_PONTOS){ toast('Essa chave já está salva. Para trocar, clique no campo e cole a nova.'); return; }
     var v = $('lh-chave').value.replace(/\s+/g, '');
     if (v.length < 20){ $('lh-chave').focus(); toast(v ? 'Essa chave parece incompleta. Copie de novo no LiderHub e cole aqui.' : 'Cole a chave do LiderHub'); return; }
     $('lh-salvar').disabled = true;
-    try { var r = await SB.rpc('salvar_segredo', { p_nome: 'liderhub', p_valor: v }); if (r.error) throw r.error; $('lh-chave').value = ''; $('lh-chave').classList.add('mask'); toast('Chave do LiderHub salva'); await lhStatus(); var sel = $('wa-conexao'); if (sel) delete sel.dataset.ok; }
+    try { var r = await SB.rpc('salvar_segredo', { p_nome: 'liderhub', p_valor: v }); if (r.error) throw r.error; delete $('lh-chave').dataset.editando; delete $('lh-eye').dataset.aberto; $('lh-eye').querySelector('use').setAttribute('href', '#i-eye'); toast('Chave do LiderHub salva'); await lhStatus(); var sel = $('wa-conexao'); if (sel) delete sel.dataset.ok; }
     catch(err){ toast('Não foi possível salvar: ' + ((err && err.message) || 'erro')); }
     finally { $('lh-salvar').disabled = false; }
   });

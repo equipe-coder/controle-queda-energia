@@ -101,12 +101,6 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .side-foot{margin-top:auto;display:flex;align-items:center;gap:10px;padding:10px 8px 0;border-top:1px solid var(--line)}
 .side-foot .av{width:28px;height:28px;border-radius:50%;background:var(--tile);display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--ink-2)}
 .side-foot small{display:block;color:var(--ink-3);font-size:11.5px}
-.side-foot #me{min-width:0;overflow:hidden;text-overflow:ellipsis}
-.side-foot #me b{display:block;font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.side-exit{display:flex;align-items:center;gap:11px;border:0;background:none;padding:8px 12px;border-radius:9px;font-size:14px;font-weight:500;color:var(--ink-2);margin-top:2px}
-.side-exit:hover{background:var(--hover);color:var(--ink)}
-.nav svg.i,.side-exit svg.i{width:18px;height:18px}
-@media (max-width:900px){ .side-exit{display:flex;padding:6px 10px;align-self:flex-start} .side{flex-direction:column} }
 
 .main{min-width:0;display:flex;flex-direction:column}
 .topbar{height:52px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding-inline:16px;background:var(--panel);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
@@ -399,9 +393,6 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   <symbol id="i-bellx" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
   <symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 3v18M7 21h10M5 7h14M5 7l-3 7a3 3 0 0 0 6 0zM19 7l-3 7a3 3 0 0 0 6 0z"/></symbol>
   <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></symbol>
-  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
-  <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></symbol>
-  <symbol id="i-userplus" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></symbol>
   <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></symbol>
   <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
   <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9"/></symbol>
@@ -443,40 +434,35 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   </div>
 </div>
 
-<div class="app" id="app" hidden>
-  <aside class="side" id="side">
-    <div class="brand"><div class="logo"><svg class="i"><use href="#i-bolt"/></svg></div><div><b>Queda de Energia</b><span>Rodrigues Litaiff</span></div></div>
-    <nav class="nav" role="tablist" aria-label="Menu">
-      <button role="tab" id="tab-dash" aria-selected="true" type="button"><svg class="i"><use href="#i-grid"/></svg>Dashboard</button>
-      <button role="tab" id="tab-clientes" aria-selected="false" type="button"><svg class="i"><use href="#i-users"/></svg>Clientes e audiências</button>
-      <button role="tab" id="tab-pos" aria-selected="false" type="button"><svg class="i"><use href="#i-gavel"/></svg>Pós-audiência</button>
-      <button role="tab" id="tab-ret" aria-selected="false" type="button"><svg class="i"><use href="#i-repeat"/></svg>Retorno em 6 meses</button>
-      <button role="tab" id="tab-prosp" aria-selected="false" type="button"><svg class="i"><use href="#i-userplus"/></svg>Prospectadores</button>
-      <button role="tab" id="tab-contest" aria-selected="false" type="button"><svg class="i"><use href="#i-file"/></svg>Análise de contestação</button>
-      <button role="tab" id="tab-equipe" class="admin-only" aria-selected="false" type="button"><svg class="i"><use href="#i-gear"/></svg>Config</button>
-    </nav>
-    <div class="side-foot"><div class="av" id="me-av" aria-hidden="true">?</div><div id="me"></div></div>
-    <button type="button" class="side-exit" id="btn-sair"><svg class="i"><use href="#i-logout"/></svg>Sair</button>
-  </aside>
-  <div class="main">
-    <div class="topbar">
-      <button type="button" class="icon-btn" id="btn-side" aria-label="Recolher menu" title="Recolher menu"><svg class="i"><use href="#i-panel"/></svg></button>
-      <div class="top-right">
-        <button type="button" class="icon-btn" id="btn-theme" aria-label="Modo escuro" title="Modo escuro"><svg class="i"><use id="theme-ico" href="#i-moon"/></svg></button>
-      </div>
+<div class="wrap" id="app" hidden>
+  <header class="top">
+    <div>
+      <div class="eyebrow">Produto · Queda de Energia</div>
+      <h1>Controle de Clientes e Audiências</h1>
+      <p class="sub">Cadastro, pauta de audiências, aviso ao cliente, resultado e retorno.</p>
     </div>
-    <div class="content">
-      <div class="ph">
-        <div class="ph-left"><div class="ph-tile"><svg class="i"><use id="ph-ico" href="#i-grid"/></svg></div><div><h1 id="ph-title">Dashboard</h1><p id="ph-sub">Visão geral dos clientes e a pauta de audiências</p></div></div>
-        <div class="ph-actions">
-          <div class="row-btns"><button class="btn primary" id="btn-novo" type="button"><svg class="i"><use href="#i-plus"/></svg>Novo cliente</button></div>
-          <small id="sync">Conectando à base…</small>
-        </div>
+    <div class="top-actions">
+      <div class="top-btns">
+        <button class="btn theme-btn" id="btn-theme" type="button" aria-label="Modo escuro" title="Modo escuro"><svg class="i"><use id="theme-ico" href="#i-moon"/></svg></button>
+        <button class="btn primary" id="btn-novo" type="button"><svg class="i"><use href="#i-plus"/></svg>Novo cliente</button>
       </div>
+      <small id="sync">Conectando à base…</small>
+      <div class="me-line"><span id="me"></span><button type="button" class="linkbtn" id="btn-sair">Sair</button></div>
+    </div>
+  </header>
 
-      <div class="banner" id="banner" hidden></div>
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tab-clientes" aria-selected="true" type="button">Clientes e audiências</button>
+    <button class="tab" role="tab" id="tab-contest" aria-selected="false" type="button">Análise de contestação</button>
+    <button class="tab" role="tab" id="tab-pos" aria-selected="false" type="button">Pós-audiência</button>
+    <button class="tab" role="tab" id="tab-ret" aria-selected="false" type="button">Retorno em 6 meses</button>
+    <button class="tab" role="tab" id="tab-prosp" aria-selected="false" type="button">Prospectadores</button>
+    <button class="tab admin-only" role="tab" id="tab-equipe" aria-selected="false" type="button">Equipe</button>
+  </nav>
 
-      <section id="view-dash" style="display:flex;flex-direction:column;gap:18px">
+  <div class="banner" id="banner" hidden></div>
+
+      <section id="view-clientes" style="display:flex;flex-direction:column;gap:18px">
         <div class="sec-title">Visão geral</div>
         <div class="stats">
           <div class="card stat">
@@ -508,9 +494,6 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
         <div class="sec-title">Pauta por dia <span class="range tnum" id="range"></span></div>
         <div class="pauta" id="pauta"></div>
 
-      </section>
-
-      <section id="view-clientes" hidden style="display:flex;flex-direction:column;gap:18px">
         <div class="card filterbar">
           <div class="fb-top">
             <div class="search"><svg class="i"><use href="#i-search"/></svg><input id="q" type="search" placeholder="Buscar por nome, CPF, RG, processo ou telefone"></div>
@@ -615,7 +598,6 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       </section>
 
       <section id="view-equipe" hidden style="display:flex;flex-direction:column;gap:18px">
-        <div class="sec-title">Equipe</div>
         <div class="prosp-head">
           <p class="view-desc">Funcionários com acesso ao sistema. Só quem está nesta lista, e ativo, consegue ver os clientes.</p>
           <button class="btn" id="btn-eq-novo" type="button"><svg class="i"><use href="#i-plus"/></svg>Novo funcionário</button>
@@ -645,8 +627,6 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
           </ul>
         </div>
       </section>
-    </div>
-  </div>
 </div>
 
 <dialog id="dlg">
@@ -768,7 +748,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
 
 <script>
 (function(){
-  var state = { hora: '', rows: [], prosp: [], resp: '', db: null, filter: 'todos', aud: 'todas', tel: 'todos', dia: '', q: '', editing: null, limit: 100, view: 'd',
+  var state = { hora: '', rows: [], prosp: [], resp: '', db: null, filter: 'todos', aud: 'todas', tel: 'todos', dia: '', q: '', editing: null, limit: 100, view: 'c',
     p: { res: '', rec: '', pag: '', conc: '', comp: '', q: '' }, r: { f: '', q: '', mes: '' } };
   var $ = function(id){ return document.getElementById(id); };
   var memId = 0;
@@ -1425,7 +1405,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   $('s-total-c').addEventListener('click', function(e){
     if (!e.target.closest('#s-semtel')) return;
     state.tel = 'sem'; state.limit = 100; renderList();
-    irParaLista();
+    $('list-title').scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
   $('fb-resp').addEventListener('change', function(e){ state.resp = e.target.value; state.limit = 100; renderList(); });
   $('fb-dia').addEventListener('click', function(){ state.dia = ''; state.hora = ''; state.limit = 100; renderPauta(); renderList(); });
@@ -1435,16 +1415,17 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   });
   $('pauta').addEventListener('click', function(e){
     var p = e.target.closest('.hr-pill');
-    // the pauta lives on the Dashboard: a click opens the client list already filtered
     if (p){
       if (p.dataset.pend){ state.dia = p.dataset.dia; state.hora = ''; state.filter = 'pendente'; }
+      else if (state.dia === p.dataset.dia && state.hora === p.dataset.hora){ state.hora = ''; }
       else { state.dia = p.dataset.dia; state.hora = p.dataset.hora; }
     } else {
       var b = e.target.closest('.day'); if (!b) return;
-      state.dia = b.dataset.dia; state.hora = '';
+      if (state.dia === b.dataset.dia && !state.hora){ state.dia = ''; } else { state.dia = b.dataset.dia; }
+      state.hora = '';
     }
     state.limit = 100; renderPauta(); renderList();
-    irParaLista();
+    $('list-title').scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
   $('pauta').addEventListener('keydown', function(e){
     if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('day')){ e.preventDefault(); e.target.click(); }
@@ -1490,22 +1471,10 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     }
   }
   ['list', 'p-list', 'r-list'].forEach(function(id){ $(id).addEventListener('click', listClick); });
-  var VIEWS = { d: ['tab-dash', 'view-dash'], c: ['tab-clientes', 'view-clientes'], p: ['tab-pos', 'view-pos'], r: ['tab-ret', 'view-ret'], g: ['tab-prosp', 'view-prosp'], e: ['tab-equipe', 'view-equipe'], x: ['tab-contest', 'view-contest'] };
-  var PAGINAS = {
-    d: ['Dashboard', 'Visão geral dos clientes e a pauta de audiências', '#i-grid'],
-    c: ['Clientes e audiências', 'Cadastro, aviso ao cliente, convites e lembrete por WhatsApp', '#i-users'],
-    p: ['Pós-audiência', 'Comparecimento, resultado, conclusos para decisão e embargos', '#i-gavel'],
-    r: ['Retorno em 6 meses', 'Clientes para contatar seis meses depois do protocolo', '#i-repeat'],
-    g: ['Prospectadores', 'Quem avisa cada cliente, por região', '#i-userplus'],
-    x: ['Análise de contestação', 'Próxima etapa do sistema', '#i-file'],
-    e: ['Config', 'Equipe com acesso ao sistema e integrações', '#i-gear']
-  };
-  function irParaLista(){ showTab('c'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  var VIEWS = { c: ['tab-clientes', 'view-clientes'], p: ['tab-pos', 'view-pos'], r: ['tab-ret', 'view-ret'], g: ['tab-prosp', 'view-prosp'], e: ['tab-equipe', 'view-equipe'], x: ['tab-contest', 'view-contest'] };
   function showTab(which){
     state.view = which;
-    if (which === 'e' && !isAdmin()) which = 'd';
-    var PH = PAGINAS[which] || PAGINAS.d;
-    $('ph-title').textContent = PH[0]; $('ph-sub').textContent = PH[1]; $('ph-ico').setAttribute('href', PH[2]);
+    if (which === 'e' && !isAdmin()) which = 'c';
     $('btn-novo').hidden = which === 'x' || which === 'g' || which === 'e';
     Object.keys(VIEWS).forEach(function(k){ $(VIEWS[k][0]).setAttribute('aria-selected', k === which ? 'true' : 'false'); $(VIEWS[k][1]).hidden = k !== which; });
     try { sessionStorage.setItem('qe-view', which); } catch(e){}
@@ -2042,17 +2011,6 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     } catch(err){ authMsg(authErro(err), 'err'); $('af-go').disabled = false; }
   });
 
-  function mostrarUsuario(nome, funcao){
-    $('me').innerHTML = '<b>' + esc(nome) + '</b><small>' + esc(FUNCAO[funcao] || funcao) + '</small>';
-    $('me-av').textContent = (String(nome || '?').trim().charAt(0) || '?').toUpperCase();
-  }
-  $('btn-side').addEventListener('click', function(){
-    var c = $('app').classList.toggle('collapsed');
-    this.setAttribute('aria-label', c ? 'Mostrar menu' : 'Recolher menu'); this.title = this.getAttribute('aria-label');
-    try { localStorage.setItem('qe-side', c ? '1' : ''); } catch(e){}
-  });
-  try { if (localStorage.getItem('qe-side')) $('app').classList.add('collapsed'); } catch(e){}
-
   /* ---------- entering the app ---------- */
   var iniciado = false, recuperando = false;
   async function entrar(session){
@@ -2063,9 +2021,9 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     var p = await SB.from('equipe').select('*').eq('email', email).maybeSingle();
     state.me = { email: email, funcao: f.data, nome: (p.data && p.data.nome) || email };
     document.body.dataset.role = f.data;
-    mostrarUsuario(state.me.nome, f.data);
+    $('me').innerHTML = '<b>' + esc(state.me.nome) + '</b> · ' + esc(FUNCAO[f.data] || f.data);
     $('auth').hidden = true; $('app').hidden = false;
-    try { var sv = sessionStorage.getItem('qe-view'); showTab(sv && VIEWS[sv] ? sv : state.view || 'd'); } catch(e){ showTab(state.view || 'd'); }
+    try { var sv = sessionStorage.getItem('qe-view'); showTab(sv && VIEWS[sv] ? sv : state.view || 'c'); } catch(e){ showTab(state.view || 'c'); }
     if (iniciado){ render(); return; }
     iniciado = true;
     state.db = DB;
@@ -2078,7 +2036,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       state.equipe = rows;
       var eu = rows.filter(function(u){ return u.email === state.me.email; })[0];
       if (!eu || !eu.ativo){ sair(); return; }
-      if (eu.funcao !== state.me.funcao || eu.nome !== state.me.nome){ state.me.funcao = eu.funcao; state.me.nome = eu.nome; document.body.dataset.role = eu.funcao; mostrarUsuario(eu.nome, eu.funcao); showTab(state.view); }
+      if (eu.funcao !== state.me.funcao || eu.nome !== state.me.nome){ state.me.funcao = eu.funcao; state.me.nome = eu.nome; document.body.dataset.role = eu.funcao; $('me').innerHTML = '<b>' + esc(eu.nome) + '</b> · ' + esc(FUNCAO[eu.funcao] || eu.funcao); showTab(state.view); }
       renderEquipe();
     }, function(){}, function(x){ return x; }, 'email');
   }

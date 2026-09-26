@@ -480,7 +480,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     <button class="tab" role="tab" id="tab-pos" aria-selected="false" type="button">Pós-audiência</button>
     <button class="tab" role="tab" id="tab-ret" aria-selected="false" type="button">Retorno em 6 meses</button>
     <button class="tab" role="tab" id="tab-prosp" aria-selected="false" type="button">Prospectadores</button>
-    <button class="tab admin-only" role="tab" id="tab-equipe" aria-selected="false" type="button">Equipe</button>
+    <button class="tab admin-only" role="tab" id="tab-equipe" aria-selected="false" type="button">Configurações</button>
   </nav>
 
   <div class="banner" id="banner" hidden></div>
@@ -631,6 +631,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       </section>
 
       <section id="view-equipe" hidden style="display:flex;flex-direction:column;gap:18px">
+        <div class="sec-title">Equipe</div>
         <div class="prosp-head">
           <p class="view-desc">Funcionários com acesso ao sistema. Só quem está nesta lista, e ativo, consegue ver os clientes.</p>
           <button class="btn" id="btn-eq-novo" type="button"><svg class="i"><use href="#i-plus"/></svg>Novo funcionário</button>
@@ -2185,7 +2186,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     var email = (session.user.email || '').toLowerCase();
     var f = await SB.rpc('minha_funcao');
     if (f.error){ showAuth('entrar'); authMsg('Não foi possível verificar seu acesso agora. Tente de novo.', 'err'); return; }
-    if (!f.data){ showAuth('bloqueado', 'O e-mail ' + email + ' ainda não tem acesso liberado. Peça a um administrador do escritório para cadastrar você na aba Equipe.'); return; }
+    if (!f.data){ showAuth('bloqueado', 'O e-mail ' + email + ' ainda não tem acesso liberado. Peça a um administrador do escritório para cadastrar você em Configurações, na parte Equipe.'); return; }
     var p = await SB.from('equipe').select('*').eq('email', email).maybeSingle();
     state.me = { email: email, funcao: f.data, nome: (p.data && p.data.nome) || email };
     document.body.dataset.role = f.data;

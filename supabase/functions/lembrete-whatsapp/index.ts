@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
         key = data?.valor || '';
       }
     }
-    if (!key) return json({ erro: 'A chave do LiderHub ainda não foi cadastrada. Cadastre na aba Equipe, em Integrações.' }, 400);
+    if (!key) return json({ erro: 'A chave do LiderHub ainda não foi cadastrada. Cadastre em Configurações, na parte Integrações.' }, 400);
 
     const body = await req.json().catch(() => ({}));
 

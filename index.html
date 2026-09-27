@@ -945,6 +945,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   function passAviso(r, f){
     var n = daysUntil(r.audData), s = sit(r);
     if (f === 'pendente') return !r.avisado && !!r.audData && n >= 0;
+    if (f === 'avisar') return !r.avisado && !!r.audData && n >= 0 && s !== 'sem_contato'; // still reachable, not yet notified
     if (f === 'avisado') return !!r.avisado;
     if (f === 'semcontato') return s === 'sem_contato';
     return true;
@@ -1075,7 +1076,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   // quick views: each one is a combination of the filters below
   var PRESETS = {
     todos: {},
-    avisar: { filter: 'pendente' },
+    avisar: { filter: 'avisar' },
     semcontato: { filter: 'semcontato' },
     semtel: { tel: 'sem' },
     online: { aud: 'online' }
@@ -1089,7 +1090,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     return k || '';
   }
   var OPC = {
-    'fb-aviso': ['filter', 'aviso', [['todos', 'Todos'], ['pendente', 'A avisar'], ['avisado', 'Avisados'], ['semcontato', 'Sem contato']]],
+    'fb-aviso': ['filter', 'aviso', [['todos', 'Todos'], ['avisar', 'A avisar'], ['semcontato', 'Sem contato'], ['pendente', 'Não avisados (os dois)'], ['avisado', 'Avisados']]],
     'fb-meio': ['meio', 'meio', [['todos', 'Todos'], ['whatsapp', 'WhatsApp'], ['convite', 'Convite'], ['prospectador', 'Prospectador'], ['outro', 'Ligação ou pessoalmente']]],
     'fb-aud': ['aud', 'aud', [['todas', 'Todas'], ['semana', 'Próximos 7 dias'], ['online', 'Online'], ['sem', 'Sem data']]],
     'fb-tel': ['tel', 'tel', [['todos', 'Todos'], ['com', 'Com telefone'], ['sem', 'Sem telefone'], ['novo', 'Preenchidos agora']]]

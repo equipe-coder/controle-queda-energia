@@ -1021,8 +1021,8 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   function telCell(r){
     var add = '<button type="button" class="tel-add" data-act="tel" data-id="' + esc(r.id) + '" title="Digite o telefone ou o nome de um cliente que avisa esta pessoa">+ contato</button>';
     var via = clienteVia(r);
-    if (via) return '<div class="val tnum">' + esc(via.contato) + '</div><div class="mini" title="Avisado pelo telefone de ' + esc(via.nome) + '">via ' + esc(primeiroNome(via.nome)) + '</div>';
-    if (pelaProsp(r)) return '<div class="val" style="font-size:12.5px">' + esc(prospName(r.responsavelId)) + '</div><div class="mini">' + esc(rotuloProsp(r).split(':')[0].toLowerCase()) + ' · ' + add + '</div>';
+    if (via) return '<div class="val" style="font-size:12.5px" title="Telefone: ' + esc(via.contato) + '">' + esc(via.nome) + '</div>';
+    if (pelaProsp(r)){ var pp = prospById(r.responsavelId) || {}; return '<div class="val" style="font-size:12.5px">' + esc(pp.nome || '') + (pp.regiao ? ' · ' + esc(pp.regiao) : '') + '</div><div class="mini">' + add + '</div>'; }
     if (!r.contato) return add;
     return '<div class="val tnum">' + esc(r.contato) + '</div>'; // filled-in phones are found with Mais filtros > Telefone > Preenchidos agora
   }

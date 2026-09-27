@@ -267,6 +267,18 @@ Deno.serve(async (req) => {
       return json({ conexoes });
     }
 
+    // lista de contatos do workspace (nome e número), para completar telefones que faltam no cadastro
+    if (body.acao === 'contatos') {
+      const out: { nome: string; numero: string }[] = [];
+      for (let page = 1; page <= 200; page++) {
+        const r = await lh(key, 'GET', '/v1/contacts?limit=100&page=' + page);
+        if (!r.ok) return json({ erro: 'LiderHub recusou (' + r.status + '): ' + (r.dados?.message || ''), parcial: out }, 502);
+        for (const c of r.dados?.contacts || []) if (c.contactNumber) out.push({ nome: c.contactName || '', numero: c.contactNumber });
+        if (!r.dados?.pagination?.hasNextPage) break;
+      }
+      return json({ contatos: out });
+    }
+
     // teste: manda a etapa escolhida, com os dados do primeiro cliente da régua, para o número informado
     if (body.acao === 'regua-teste') {
       const cfg = await lerConfig(), hoje = hojeMao();

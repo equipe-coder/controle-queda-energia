@@ -819,7 +819,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
           <label><input type="radio" name="av-meio" value="pessoalmente">Pessoalmente</label>
         </div>
       </div>
-      <div class="field full"><label for="av-obs">Avisado a quem / observação</label><input id="av-obs" autocomplete="off" placeholder="Ex.: avisado ao irmão, a filha recebeu, o próprio cliente"><span class="hint">Opcional. Aparece na coluna Aviso, embaixo da data.</span></div>
+      <div class="field full"><label for="av-obs">Quem recebeu o aviso</label><input id="av-obs" autocomplete="off" placeholder="Ex.: irmão João, filha Maria, o próprio cliente"><span class="hint">Opcional. Aparece na coluna Aviso, embaixo da data.</span></div>
       <div class="field"><label for="av-data">Data do aviso</label><input id="av-data" type="date"></div>
     </div>
     <div class="f-foot">
@@ -1035,6 +1035,13 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   }
   var MEIOS = { whatsapp: 'WhatsApp', convite: 'Convite', prospectador: 'Prospectador', ligacao: 'Ligação', pessoalmente: 'Pessoalmente' };
   function passMeio(r, f){ if (!f || f === 'todos') return true; if (!r.avisado) return false; if (f === 'outro') return r.meioAviso === 'ligacao' || r.meioAviso === 'pessoalmente'; return r.meioAviso === f; }
+  function soNome(t){
+    return String(t || '').trim()
+      .replace(/^avisad[oa]s?\s+(pel[oa]s?|a[os]?|à|às|por|para|com)\s+/i, '')
+      .replace(/^(a\s+|o\s+)?(prospectador[a]?|prospector[a]?)\s+/i, '')
+      .replace(/^(seu|sua|seus|suas)\s+/i, '')
+      .trim();
+  }
   function avisoCell(r){
     var n = daysUntil(r.audData), s = sit(r);
     var pend = !r.avisado && r.audData && n >= 0;
@@ -1046,7 +1053,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       var partes = [];
       if (r.meioAviso) partes.push(MEIOS[r.meioAviso] || r.meioAviso);
       if (r.avisadoEm) partes.push(fmtShort(String(r.avisadoEm).slice(0, 10)));
-      if (r.avisadoA) partes.push(r.avisadoA);
+      if (r.avisadoA) partes.push(soNome(r.avisadoA));
       linha2 = partes.join(' · ');
     } else if (s === 'sem_contato'){
       linha1 = btn('crit', 'Sem contato', 'Clique para registrar o aviso');

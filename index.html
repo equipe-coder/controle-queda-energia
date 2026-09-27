@@ -362,6 +362,7 @@ header.top h1{margin:3px 0 0;font-size:24px;line-height:1.2;font-weight:700;lett
 #list .name span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #list .addr{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;margin-top:2px}
 .mini{font-size:12px;color:var(--ink-3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mini.quebra{white-space:normal;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;line-height:1.35}
 .mini.crit{color:var(--red)}
 .mini.warn{color:var(--amber)}
 .mini.blue{color:var(--blue)}
@@ -1059,7 +1060,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     var extra = '';
     if (r.semWhatsApp) extra = '<div class="mini warn" title="O número cadastrado não tem WhatsApp">Número sem WhatsApp</div>';
     else if (r.reguaUltimo && r.reguaUltimo.status === 'enviado') extra = '<div class="mini">WhatsApp automático: ' + esc(ETQ[r.reguaUltimo.etapa] || r.reguaUltimo.etapa) + '</div>';
-    return '<div>' + linha1 + (linha2 ? '<div class="mini" title="' + esc(linha2) + '">' + esc(linha2) + '</div>' : '') + extra + '</div>';
+    return '<div>' + linha1 + (linha2 ? '<div class="mini quebra" title="' + esc(linha2) + '">' + esc(linha2) + '</div>' : '') + extra + '</div>';
   }
 
   function renderStats(){

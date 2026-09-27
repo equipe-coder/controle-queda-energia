@@ -111,7 +111,7 @@ function texto(modelo: string, g: Grupo, envio: string) {
 }
 
 /* ---------------- régua ---------------- */
-type Cli = { id: string; nome: string; contato: string; audData: string; audHora: string; audMarcadaEm?: string; online?: boolean };
+type Cli = { id: string; nome: string; contato: string; audData: string; audHora: string; audMarcadaEm?: string; online?: boolean; foraDaRegua?: boolean };
 type Grupo = { numero: string; aud: string; hora: string; marcada: string; clientes: Cli[] };
 type Passo = { etapa: string; data: string; ate: string };
 
@@ -129,6 +129,7 @@ async function carregarClientes(): Promise<Cli[]> {
 function grupos(clientes: Cli[], hoje: string): Grupo[] {
   const m = new Map<string, Grupo>();
   for (const c of clientes) {
+    if (c.foraDaRegua) continue; // telefone preenchido agora: só entra quando liberado no cadastro
     const n = numeroBase(c.contato); if (!n || !c.audData || c.audData <= hoje) continue;
     const k = n + '|' + c.audData;
     const g = m.get(k) || { numero: n, aud: c.audData, hora: c.audHora || '', marcada: '', clientes: [] };

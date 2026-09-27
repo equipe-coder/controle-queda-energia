@@ -71,6 +71,9 @@ body{margin:0}
 .btn.lh-save{background:#27396B;border-color:#27396B;color:#fff}
 .btn.lh-save:hover{background:#1F2F5A;border-color:#1F2F5A}
 .integ-s{font-size:12px;color:var(--ink-3);margin-top:4px}
+.tel-add{border:1px dashed var(--line-2);background:none;border-radius:8px;padding:3px 9px;font-size:12px;font-weight:600;color:var(--blue)}
+.tel-add:hover{border-color:var(--blue)}
+.tel-in{width:150px;padding:4px 8px;font-size:12.5px;border:1px solid var(--blue);border-radius:8px}
 .chk{display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer}
 .integ-grid{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}
 .integ.regua{max-width:760px;flex:1 1 520px}
@@ -575,6 +578,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
                 <button type="button" data-v="todos" aria-pressed="true">Todos <span class="n" data-n="tel:todos"></span></button>
                 <button type="button" data-v="com" aria-pressed="false">Com telefone <span class="n" data-n="tel:com"></span></button>
                 <button type="button" data-v="sem" aria-pressed="false"><i class="dot crit"></i>Sem telefone <span class="n" data-n="tel:sem"></span></button>
+                <button type="button" data-v="novo" aria-pressed="false"><i class="dot ok"></i>Preenchidos <span class="n" data-n="tel:novo"></span></button>
               </div>
             </div>
             <div class="fb-group">
@@ -716,6 +720,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       <div class="field"><label for="f-rg">RG</label><input id="f-rg" class="tnum"></div>
       <div class="field full"><label for="f-end">Endereço</label><input id="f-end" placeholder="Rua, número, bairro, cidade/UF"></div>
       <div class="field full"><label for="f-contato">Contato (telefone / WhatsApp)</label><input id="f-contato" inputmode="tel" placeholder="(97) 00000-0000" class="tnum"></div>
+      <div class="field full"><label class="chk"><input id="f-regua" type="checkbox"> Enviar avisos automáticos por WhatsApp para este cliente</label><span class="hint">Telefones preenchidos agora ficam fora da régua até você marcar aqui.</span></div>
 
       <div class="section-lbl">Processo</div>
       <div class="field full"><label for="f-proc">Nº do processo</label><input id="f-proc" class="tnum" placeholder="0000000-00.0000.8.04.2000"></div>
@@ -914,7 +919,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     return state.prosp.find(function(p){ return (p.palavrasEndereco || []).some(function(k){ return k && e.indexOf(norm(k)) >= 0; }); });
   }
   function precisaConvite(r){ return isFuture(r) && !r.avisado && sit(r) === 'sem_contato'; } // only clients nobody can reach; missing phones are a registration task, not a convite
-  function passTel(r, f){ if (!f || f === 'todos') return true; return f === 'sem' ? !r.contato : !!r.contato; }
+  function passTel(r, f){ if (!f || f === 'todos') return true; if (f === 'novo') return !!(r.contato && r.telefoneAdicionadoEm); return f === 'sem' ? !r.contato : !!r.contato; }
   function passResp(r, f){ if (!f) return true; if (f === '-') return !prospName(r.responsavelId); return r.responsavelId === f; }
   function fmtAny(s){ if (!s) return ''; return /^\d{4}-\d{2}-\d{2}$/.test(s) ? fmtDate(s) : new Date(s).toLocaleDateString('pt-BR'); }
   function isFuture(r){ var n = daysUntil(r.audData); return n != null && n >= 0; }
@@ -984,6 +989,12 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       if (hay.indexOf(q) < 0 && !(qd.length >= 3 && hayd.indexOf(qd) >= 0)) return false;
     }
     return true;
+  }
+  function telCell(r){
+    if (!r.contato) return '<button type="button" class="tel-add" data-act="tel" data-id="' + esc(r.id) + '">+ telefone</button>';
+    var novo = r.telefoneAdicionadoEm ? '<span class="pill ok" title="Preenchido em ' + esc(fmtAny(r.telefoneAdicionadoEm)) + (r.telefoneAdicionadoPor ? ' por ' + esc(r.telefoneAdicionadoPor) : '') + '">Número novo</span>' : '';
+    var fora = r.contato && r.foraDaRegua ? '<span class="small" title="Não recebe os avisos automáticos até ser liberado no cadastro">fora da régua</span>' : '';
+    return '<div class="cell-stack"><div class="val tnum">' + esc(r.contato) + '</div>' + novo + fora + '</div>';
   }
   function audCell(r){
     if (!r.audData) return '<span class="pill muted">Sem data</span>';
@@ -1111,7 +1122,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     if (state.filter === 'pendente') extra.push('não avisados'); else if (state.filter === 'avisado') extra.push('avisados'); else if (state.filter === 'semcontato') extra.push('sem contato');
     if (state.aud === 'semana') extra.push('próximos 7 dias'); else if (state.aud === 'sem') extra.push('sem data'); else if (state.aud === 'online') extra.push('audiência online');
     if (state.resp) extra.push(state.resp === '-' ? 'sem responsável' : prospName(state.resp));
-    if (state.tel === 'sem') extra.push('sem telefone'); else if (state.tel === 'com') extra.push('com telefone');
+    if (state.tel === 'sem') extra.push('sem telefone'); else if (state.tel === 'com') extra.push('com telefone'); else if (state.tel === 'novo') extra.push('telefones preenchidos agora');
     if (state.meio !== 'todos') extra.push(state.meio === 'outro' ? 'avisados por ligação ou pessoalmente' : 'avisados por ' + (MEIOS[state.meio] || state.meio).toLowerCase());
     if (state.q) extra.push('busca "' + state.q + '"');
     $('list-sum').innerHTML =
@@ -1144,7 +1155,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
         '<div class="c-name"><div class="name">' + esc(r.nome) + '</div><div class="addr">' + esc(r.endereco || '—') + '</div>' + folderLink(r) + '</div>' +
         '<div><span class="lbl">CPF / RG</span><div class="val">' + esc(r.cpf || '—') + (r.cpf && !cpfValido(r.cpf) ? ' <span class="pill crit">inválido</span>' : '') + '</div><div class="small tnum">RG ' + esc(r.rg || '—') + '</div></div>' +
         '<div><span class="lbl">Processo</span><div class="val" style="font-size:12.5px;overflow-wrap:anywhere">' + esc(r.processo || '—') + '</div>' + (r.uc ? '<div class="small tnum">UC ' + esc(r.uc) + '</div>' : '') + '</div>' +
-        '<div><span class="lbl">Contato</span><div class="val">' + esc(r.contato || '—') + '</div></div>' +
+        '<div><span class="lbl">Contato</span>' + telCell(r) + '</div>' +
         '<div><span class="lbl">Audiência</span>' + audCell(r) + '</div>' +
         '<div><span class="lbl">Aviso</span>' + avisoCell(r) + '</div>' +
         '<div class="c-act"><button type="button" class="edit" data-act="edit" data-id="' + esc(r.id) + '">Editar</button></div>' +
@@ -1430,6 +1441,8 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     $('f-rg').value = r ? r.rg || '' : '';
     $('f-end').value = r ? r.endereco || '' : '';
     $('f-contato').value = r ? r.contato || '' : '';
+    // clients still without a phone start unchecked: a number filled in now stays out of the régua until released
+    $('f-regua').checked = r ? (!!r.contato && !r.foraDaRegua) : true;
     $('f-data').value = r ? r.audData || '' : '';
     $('f-hora').value = r ? r.audHora || '' : '';
     $('f-online').checked = !!(r && r.online);
@@ -1487,7 +1500,9 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     var avisoEm = $('f-avisoem').value || (avisado ? iso(new Date()) : '');
     var data = Object.assign({}, prev, {
       nome: nome, cpf: $('f-cpf').value.trim(), rg: $('f-rg').value.trim(), endereco: $('f-end').value.trim(),
-      contato: $('f-contato').value.trim(), audData: $('f-data').value || '', audHora: $('f-hora').value || '', online: $('f-online').checked,
+      contato: $('f-contato').value.trim(), foraDaRegua: !$('f-regua').checked,
+      telefoneAdicionadoEm: !prev.contato && $('f-contato').value.trim() ? new Date().toISOString() : (prev.telefoneAdicionadoEm || ''),
+      telefoneAdicionadoPor: !prev.contato && $('f-contato').value.trim() ? (state.me ? state.me.email : '') : (prev.telefoneAdicionadoPor || ''), audData: $('f-data').value || '', audHora: $('f-hora').value || '', online: $('f-online').checked,
       // day the hearing was set (starts the régua); kept while the date stays the same
       audMarcadaEm: $('f-data').value && $('f-data').value !== prev.audData ? iso(new Date()) : (prev.audMarcadaEm || ''),
       avisado: avisado, situacao: situacao, responsavelId: $('f-resp').value || (!state.editing && prospForAddress($('f-end').value) ? prospForAddress($('f-end').value).id : ''), avisadoEm: avisoEm || null, avisadoA: $('f-avisadoa').value.trim(), meioAviso: avisado ? $('f-meio').value : (prev.meioAviso || ''),
@@ -1566,6 +1581,22 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       b.disabled = true; b.lastChild.textContent = 'Criando…';
       try { await ensureFolder(r.id, r.nome); toast('Pasta criada no Drive'); }
       catch (e2){ toast('Pasta não criada: ' + driveErr(e2)); b.disabled = false; b.lastChild.textContent = 'Criar pasta'; }
+      return;
+    }
+    if (b.dataset.act === 'tel'){
+      var inp = document.createElement('input'); inp.className = 'tel-in tnum'; inp.inputMode = 'tel'; inp.placeholder = '(97) 00000-0000';
+      b.replaceWith(inp); inp.focus();
+      inp.addEventListener('input', function(){ inp.value = maskTel(inp.value); });
+      var feito = false;
+      async function salvarTel(){
+        if (feito) return; feito = true;
+        var v = inp.value.trim();
+        if (digits(v).length < 10){ if (v) toast('Número incompleto: informe DDD e telefone'); renderList(); return; }
+        try { await patchRow(r.id, { contato: v, telefoneAdicionadoEm: new Date().toISOString(), telefoneAdicionadoPor: state.me ? state.me.email : '', foraDaRegua: true, semWhatsApp: null, atualizadoEm: new Date().toISOString() }); toast('Telefone salvo: ' + (r.nome || '')); }
+        catch(err){ toast(errMsg(err)); renderList(); }
+      }
+      inp.addEventListener('keydown', function(ev){ if (ev.key === 'Enter'){ ev.preventDefault(); salvarTel(); } else if (ev.key === 'Escape'){ feito = true; renderList(); } });
+      inp.addEventListener('blur', function(){ if (inp.value.trim()) salvarTel(); else { feito = true; renderList(); } });
       return;
     }
     if (b.dataset.act === 'aviso' && !r.avisado){ abrirAviso(r); return; }

@@ -200,6 +200,20 @@ header.top h1{margin:3px 0 0;font-size:24px;line-height:1.2;font-weight:700;lett
 .fb-clear:hover{text-decoration:underline}
 .stat-link{border:0;background:none;padding:0;font:inherit;color:var(--blue);font-weight:600;cursor:pointer}
 .stat-link:hover{text-decoration:underline}
+.fb-mais{padding:8px 12px;font-size:13px;position:relative}
+.fb-mais[aria-expanded="true"]{background:var(--active)}
+.fb-badge{min-width:18px;height:18px;border-radius:999px;background:var(--blue);color:#fff;font-size:11px;display:inline-grid;place-items:center;padding:0 5px}
+.fb-rapido{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.fb-rapido > button{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);background:var(--panel);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:600;color:var(--ink-2);white-space:nowrap}
+.fb-rapido > button:hover{background:var(--hover);color:var(--ink)}
+.fb-rapido > button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.fb-rapido .n{font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums;opacity:.75}
+.fb-fim{margin-left:auto;display:inline-flex;align-items:center;gap:10px}
+.fb-painel{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;border-top:1px solid var(--line);padding-top:12px}
+.fb-painel label{display:flex;flex-direction:column;gap:4px;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);font-weight:700;min-width:0}
+.fb-painel select{width:100%;border:1px solid var(--line-2);background:var(--panel);border-radius:9px;padding:7px 9px;font-size:13px;font-weight:500;text-transform:none;letter-spacing:0;color:var(--ink)}
+.fb-painel select.ativo{border-color:var(--blue);background:var(--blue-soft)}
+@media (max-width:900px){ .fb-painel{grid-template-columns:repeat(2,minmax(0,1fr))} .fb-fim{margin-left:0;width:100%} }
 .fb-groups{display:flex;flex-wrap:wrap;gap:12px 28px;align-items:center;border-top:1px solid var(--line);padding-top:12px}
 .fb-group{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;min-width:0}
 .fb-lbl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:700}
@@ -539,52 +553,22 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
         <div class="card filterbar">
           <div class="fb-top">
             <div class="search"><svg class="i"><use href="#i-search"/></svg><input id="q" type="search" placeholder="Buscar por nome, CPF, RG, processo ou telefone"></div>
-            <span class="fb-count tnum" id="fb-count"></span>
-            <button type="button" class="fb-clear" id="fb-clear" hidden>Limpar filtros</button>
+            <button type="button" class="btn fb-mais" id="fb-mais" aria-expanded="false" aria-controls="fb-painel"><svg class="i"><use href="#i-filter"/></svg>Mais filtros<span class="fb-badge" id="fb-badge" hidden></span></button>
           </div>
-          <div class="fb-groups">
-            <div class="fb-group">
-              <span class="fb-lbl">Aviso</span>
-              <div class="seg" id="seg-aviso" role="group" aria-label="Situação do aviso">
-                <button type="button" data-v="todos" aria-pressed="true">Todos <span class="n" data-n="aviso:todos"></span></button>
-                <button type="button" data-v="avisado" aria-pressed="false"><i class="dot ok"></i>Avisados <span class="n" data-n="aviso:avisado"></span></button>
-                <button type="button" data-v="pendente" aria-pressed="false"><i class="dot warn"></i>Não avisados <span class="n" data-n="aviso:pendente"></span></button>
-                <button type="button" data-v="semcontato" aria-pressed="false" class="sub"><i class="dot crit"></i>Sem contato <span class="n" data-n="aviso:semcontato"></span></button>
-              </div>
-            </div>
-            <div class="fb-group">
-              <span class="fb-lbl">Audiência</span>
-              <div class="seg" id="seg-aud" role="group" aria-label="Audiência">
-                <button type="button" data-v="todas" aria-pressed="true">Todas <span class="n" data-n="aud:todas"></span></button>
-                <button type="button" data-v="semana" aria-pressed="false">Próximos 7 dias <span class="n" data-n="aud:semana"></span></button>
-                <button type="button" data-v="sem" aria-pressed="false">Sem data <span class="n" data-n="aud:sem"></span></button>
-                <button type="button" data-v="online" aria-pressed="false">Online <span class="n" data-n="aud:online"></span></button>
-              </div>
-              <button type="button" class="day-chip tnum" id="fb-dia" hidden></button>
-            </div>
-            <div class="fb-group">
-              <span class="fb-lbl">Meio do aviso</span>
-              <div class="seg" id="seg-meio" role="group" aria-label="Meio do aviso">
-                <button type="button" data-v="todos" aria-pressed="true">Todos <span class="n" data-n="meio:todos"></span></button>
-                <button type="button" data-v="whatsapp" aria-pressed="false"><i class="dot ok"></i>WhatsApp <span class="n" data-n="meio:whatsapp"></span></button>
-                <button type="button" data-v="convite" aria-pressed="false"><i class="dot" style="background:var(--blue)"></i>Convite <span class="n" data-n="meio:convite"></span></button>
-                <button type="button" data-v="prospectador" aria-pressed="false"><i class="dot warn"></i>Prospectador <span class="n" data-n="meio:prospectador"></span></button>
-                <button type="button" data-v="outro" aria-pressed="false" class="sub">Ligação / pessoalmente <span class="n" data-n="meio:outro"></span></button>
-              </div>
-            </div>
-            <div class="fb-group">
-              <span class="fb-lbl">Telefone</span>
-              <div class="seg" id="seg-tel" role="group" aria-label="Telefone">
-                <button type="button" data-v="todos" aria-pressed="true">Todos <span class="n" data-n="tel:todos"></span></button>
-                <button type="button" data-v="com" aria-pressed="false">Com telefone <span class="n" data-n="tel:com"></span></button>
-                <button type="button" data-v="sem" aria-pressed="false"><i class="dot crit"></i>Sem telefone <span class="n" data-n="tel:sem"></span></button>
-                <button type="button" data-v="novo" aria-pressed="false"><i class="dot ok"></i>Preenchidos <span class="n" data-n="tel:novo"></span></button>
-              </div>
-            </div>
-            <div class="fb-group">
-              <span class="fb-lbl">Responsável</span>
-              <label class="sel"><svg class="i lead"><use href="#i-users"/></svg><select id="fb-resp" aria-label="Responsável pelo aviso"><option value="">Todos</option></select><svg class="i chev"><use href="#i-chev"/></svg></label>
-            </div>
+          <div class="fb-rapido" id="fb-rapido" role="group" aria-label="Atalhos">
+            <button type="button" data-p="todos">Todos <span class="n" data-np="todos"></span></button>
+            <button type="button" data-p="avisar"><i class="dot warn"></i>A avisar <span class="n" data-np="avisar"></span></button>
+            <button type="button" data-p="semcontato"><i class="dot crit"></i>Sem contato <span class="n" data-np="semcontato"></span></button>
+            <button type="button" data-p="semtel">Sem telefone <span class="n" data-np="semtel"></span></button>
+            <button type="button" data-p="online">Online <span class="n" data-np="online"></span></button>
+            <span class="fb-fim"><button type="button" class="day-chip tnum" id="fb-dia" hidden></button><span class="fb-count tnum" id="fb-count"></span><button type="button" class="fb-clear" id="fb-clear" hidden>Limpar</button></span>
+          </div>
+          <div class="fb-painel" id="fb-painel" hidden>
+            <label>Situação do aviso<select id="fb-aviso"></select></label>
+            <label>Meio do aviso<select id="fb-meio"></select></label>
+            <label>Audiência<select id="fb-aud"></select></label>
+            <label>Telefone<select id="fb-tel"></select></label>
+            <label>Responsável<select id="fb-resp"></select></label>
           </div>
         </div>
 
@@ -992,9 +976,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   }
   function telCell(r){
     if (!r.contato) return '<button type="button" class="tel-add" data-act="tel" data-id="' + esc(r.id) + '">+ telefone</button>';
-    var novo = r.telefoneAdicionadoEm ? '<span class="pill ok" title="Preenchido em ' + esc(fmtAny(r.telefoneAdicionadoEm)) + (r.telefoneAdicionadoPor ? ' por ' + esc(r.telefoneAdicionadoPor) : '') + '">Número novo</span>' : '';
-    var fora = r.contato && r.foraDaRegua ? '<span class="small" title="Não recebe os avisos automáticos até ser liberado no cadastro">fora da régua</span>' : '';
-    return '<div class="cell-stack"><div class="val tnum">' + esc(r.contato) + '</div>' + novo + fora + '</div>';
+    return '<div class="val tnum">' + esc(r.contato) + '</div>'; // filled-in phones are found with Mais filtros > Telefone > Preenchidos agora
   }
   function audCell(r){
     if (!r.audData) return '<span class="pill muted">Sem data</span>';
@@ -1090,26 +1072,59 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     $('range').textContent = keys.length ? '· ' + fmtDate(keys[0]) + ' – ' + fmtDate(keys[keys.length - 1]) : '';
   }
 
+  // quick views: each one is a combination of the filters below
+  var PRESETS = {
+    todos: {},
+    avisar: { filter: 'pendente' },
+    semcontato: { filter: 'semcontato' },
+    semtel: { tel: 'sem' },
+    online: { aud: 'online' }
+  };
+  var FILTRO_PADRAO = { filter: 'todos', aud: 'todas', tel: 'todos', meio: 'todos', resp: '' };
+  function presetAtual(){
+    var k = Object.keys(PRESETS).filter(function(p){
+      var alvo = Object.assign({}, FILTRO_PADRAO, PRESETS[p]);
+      return Object.keys(alvo).every(function(c){ return state[c] === alvo[c]; });
+    })[0];
+    return k || '';
+  }
+  var OPC = {
+    'fb-aviso': ['filter', 'aviso', [['todos', 'Todos'], ['pendente', 'A avisar'], ['avisado', 'Avisados'], ['semcontato', 'Sem contato']]],
+    'fb-meio': ['meio', 'meio', [['todos', 'Todos'], ['whatsapp', 'WhatsApp'], ['convite', 'Convite'], ['prospectador', 'Prospectador'], ['outro', 'Ligação ou pessoalmente']]],
+    'fb-aud': ['aud', 'aud', [['todas', 'Todas'], ['semana', 'Próximos 7 dias'], ['online', 'Online'], ['sem', 'Sem data']]],
+    'fb-tel': ['tel', 'tel', [['todos', 'Todos'], ['com', 'Com telefone'], ['sem', 'Sem telefone'], ['novo', 'Preenchidos agora']]]
+  };
   function renderFilters(shown){
-    var rows = state.rows;
-    Array.prototype.forEach.call(document.querySelectorAll('.filterbar [data-n]'), function(el){
-      var p = el.dataset.n.split(':'), o = {}; o[p[0]] = p[1];
-      el.textContent = rows.filter(function(r){ return matches(r, o); }).length;
+    var rows = state.rows, conta = function(o){ return rows.filter(function(r){ return matches(r, o); }).length; };
+    // quick views
+    var atual = presetAtual();
+    Array.prototype.forEach.call($('fb-rapido').querySelectorAll('[data-p]'), function(b){
+      var p = PRESETS[b.dataset.p], o = Object.assign({}, FILTRO_PADRAO, p);
+      b.setAttribute('aria-pressed', b.dataset.p === atual ? 'true' : 'false');
+      b.querySelector('.n').textContent = rows.filter(function(r){
+        return passAviso(r, o.filter) && passAud(r, o.aud) && passTel(r, o.tel) && passMeio(r, o.meio);
+      }).length;
     });
-    [['seg-aviso', state.filter], ['seg-aud', state.aud], ['seg-tel', state.tel], ['seg-meio', state.meio]].forEach(function(g){
-      Array.prototype.forEach.call($(g[0]).children, function(b){ b.setAttribute('aria-pressed', b.dataset.v === g[1] ? 'true' : 'false'); });
+    // panel selects with counts
+    var avancados = 0;
+    Object.keys(OPC).forEach(function(id){
+      var campo = OPC[id][0], chave = OPC[id][1], sel = $(id);
+      sel.innerHTML = OPC[id][2].map(function(o){ var q = {}; q[chave] = o[0]; return '<option value="' + o[0] + '">' + esc(o[1]) + ' (' + conta(q) + ')</option>'; }).join('');
+      sel.value = state[campo];
+      var ativo = sel.value !== OPC[id][2][0][0]; sel.classList.toggle('ativo', ativo); if (ativo) avancados++;
     });
-    var sel = $('fb-resp'), cnt = function(v){ return rows.filter(function(r){ return matches(r, { resp: v }); }).length; };
+    var sel = $('fb-resp'), cnt = function(v){ return conta({ resp: v }); };
     sel.innerHTML = '<option value="">Todos (' + cnt('') + ')</option><option value="-">Sem responsável (' + cnt('-') + ')</option>' +
       state.prosp.map(function(p){ return '<option value="' + esc(p.id) + '">' + esc(p.nome) + ' (' + cnt(p.id) + ')</option>'; }).join('');
     if (state.resp && state.resp !== '-' && !prospById(state.resp)) state.resp = '';
-    sel.value = state.resp;
+    sel.value = state.resp; sel.classList.toggle('ativo', !!state.resp); if (state.resp) avancados++;
+    $('fb-badge').hidden = !avancados; $('fb-badge').textContent = avancados;
     var dia = $('fb-dia');
     dia.hidden = !state.dia;
     if (state.dia) dia.innerHTML = 'Dia ' + fmtShort(state.dia) + (state.hora ? ' · ' + esc(state.hora) : '') + ' <span aria-hidden="true">×</span>';
     var active = state.filter !== 'todos' || state.aud !== 'todas' || state.tel !== 'todos' || state.meio !== 'todos' || !!state.dia || !!state.q || !!state.resp;
     $('fb-clear').hidden = !active;
-    $('fb-count').textContent = active ? 'Mostrando ' + shown + ' de ' + rows.length : rows.length + ' clientes';
+    $('fb-count').textContent = active ? shown + ' de ' + rows.length : rows.length + ' clientes';
   }
   function renderSum(list){
     var av = list.filter(function(r){ return r.avisado; }).length;
@@ -1158,7 +1173,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     }
     list.slice(0, state.limit).forEach(function(r){
       html += '<div class="row">' +
-        '<div class="c-name"><div class="name">' + esc(r.nome) + (fixos[r.id] ? ' <span class="pill blue" title="Alterado agora. Some da lista quando você trocar o filtro.">alterado agora</span>' : '') + '</div><div class="addr">' + esc(r.endereco || '—') + '</div>' + folderLink(r) + '</div>' +
+        '<div class="c-name"><div class="name">' + esc(r.nome) + '</div><div class="addr">' + esc(r.endereco || '—') + '</div>' + folderLink(r) + '</div>' +
         '<div><span class="lbl">CPF / RG</span><div class="val">' + esc(r.cpf || '—') + (r.cpf && !cpfValido(r.cpf) ? ' <span class="pill crit">inválido</span>' : '') + '</div><div class="small tnum">RG ' + esc(r.rg || '—') + '</div></div>' +
         '<div><span class="lbl">Processo</span><div class="val" style="font-size:12.5px;overflow-wrap:anywhere">' + esc(r.processo || '—') + '</div>' + (r.uc ? '<div class="small tnum">UC ' + esc(r.uc) + '</div>' : '') + '</div>' +
         '<div><span class="lbl">Contato</span>' + telCell(r) + '</div>' +
@@ -1535,21 +1550,16 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   /* ---------- events ---------- */
   $('btn-novo').addEventListener('click', function(){ openForm(null); });
   $('q').addEventListener('input', function(e){ state.q = e.target.value.trim(); state.limit = 100; renderList(); });
-  $('seg-aviso').addEventListener('click', function(e){
-    var b = e.target.closest('button'); if (!b) return;
-    state.filter = b.dataset.v; state.limit = 100; renderList();
+  $('fb-rapido').addEventListener('click', function(e){
+    var b = e.target.closest('[data-p]'); if (!b) return;
+    Object.assign(state, FILTRO_PADRAO, PRESETS[b.dataset.p]); state.dia = ''; state.hora = ''; state.limit = 100;
+    renderPauta(); renderList();
   });
-  $('seg-aud').addEventListener('click', function(e){
-    var b = e.target.closest('button'); if (!b) return;
-    state.aud = b.dataset.v; state.limit = 100; renderList();
+  Object.keys(OPC).forEach(function(id){
+    $(id).addEventListener('change', function(e){ state[OPC[id][0]] = e.target.value; state.limit = 100; renderList(); });
   });
-  $('seg-meio').addEventListener('click', function(e){
-    var b = e.target.closest('button'); if (!b) return;
-    state.meio = b.dataset.v; state.limit = 100; renderList();
-  });
-  $('seg-tel').addEventListener('click', function(e){
-    var b = e.target.closest('button'); if (!b) return;
-    state.tel = b.dataset.v; state.limit = 100; renderList();
+  $('fb-mais').addEventListener('click', function(){
+    var p = $('fb-painel'), abrir = p.hidden; p.hidden = !abrir; this.setAttribute('aria-expanded', abrir ? 'true' : 'false');
   });
   $('s-total-c').addEventListener('click', function(e){
     if (!e.target.closest('#s-semtel')) return;

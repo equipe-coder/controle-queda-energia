@@ -375,6 +375,13 @@ header.top h1{margin:3px 0 0;font-size:24px;line-height:1.2;font-weight:700;lett
 .st:hover{text-decoration:underline;text-underline-offset:3px}
 .st.acao{border:1px solid var(--amber);color:var(--amber);border-radius:999px;padding:3px 11px;font-size:12px}
 .st.acao:hover{background:var(--amber-soft);text-decoration:none}
+.modo{display:inline-flex;margin-top:5px;border:1px solid var(--line);border-radius:999px;padding:2px;background:var(--soft)}
+.modo button{border:0;background:none;border-radius:999px;padding:1px 8px;font-size:11px;font-weight:600;color:var(--ink-3)}
+.modo button:hover{color:var(--ink)}
+.modo button[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:0 0 0 1px var(--line)}
+.modo button.on[aria-pressed="true"]{background:var(--purple);color:#fff;box-shadow:none}
+.tel-edit{border:0;background:none;padding:0;font:inherit;color:inherit;cursor:text;text-align:left;border-bottom:1px dashed transparent}
+.tel-edit:hover{border-bottom-color:var(--line-2)}
 .ico-btn{width:30px;height:30px;display:inline-grid;place-items:center;border:1px solid transparent;background:none;border-radius:8px;color:var(--ink-3)}
 .ico-btn:hover{border-color:var(--line-2);color:var(--ink);background:var(--panel)}
 .ico-btn svg.i{width:16px;height:16px}
@@ -1021,17 +1028,18 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   function telCell(r){
     var add = '<button type="button" class="tel-add" data-act="tel" data-id="' + esc(r.id) + '" title="Digite o telefone ou o nome de um cliente que avisa esta pessoa">+ contato</button>';
     var via = clienteVia(r);
-    if (via) return '<div class="val" style="font-size:12.5px" title="Telefone: ' + esc(via.contato) + '">' + esc(via.nome) + '</div>';
+    if (via) return '<button type="button" class="tel-edit val" style="font-size:12.5px" data-act="tel" data-id="' + esc(r.id) + '" title="Telefone: ' + esc(via.contato) + ' · clique para trocar">' + esc(via.nome) + '</button>';
     if (pelaProsp(r)){ var pp = prospById(r.responsavelId) || {}; return '<div class="val" style="font-size:12.5px">' + esc(pp.nome || '') + (pp.regiao ? ' · ' + esc(pp.regiao) : '') + '</div><div class="mini">' + add + '</div>'; }
     if (!r.contato) return add;
-    return '<div class="val tnum">' + esc(r.contato) + '</div>'; // filled-in phones are found with Mais filtros > Telefone > Preenchidos agora
+    return '<button type="button" class="tel-edit val tnum" data-act="tel" data-id="' + esc(r.id) + '" title="Clique para corrigir">' + esc(r.contato) + '</button>';
   }
   function audCell(r){
     if (!r.audData) return '<div class="mini">Sem data</div>';
     var n = daysUntil(r.audData);
     var cls = n < 0 ? '' : (n <= 3 ? 'crit' : (n <= 7 ? 'warn' : 'blue'));
     return '<div class="val">' + fmtShort(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') + '</div>' +
-           '<div class="mini ' + cls + '">' + relLabel(n) + (r.online ? '</div><div class="mini roxo">Online' : '') + '</div>';
+           '<div class="mini ' + cls + '">' + relLabel(n) + '</div>' +
+           '<div class="modo" role="group" aria-label="Tipo de audiência"><button type="button" data-act="modo" data-v="p" data-id="' + esc(r.id) + '" aria-pressed="' + (!r.online) + '">Presencial</button><button type="button" class="on" data-act="modo" data-v="o" data-id="' + esc(r.id) + '" aria-pressed="' + (!!r.online) + '">Online</button></div>';
   }
   var MEIOS = { whatsapp: 'WhatsApp', convite: 'Convite', prospectador: 'Prospectador', ligacao: 'Ligação', pessoalmente: 'Pessoalmente' };
   function passMeio(r, f){ if (!f || f === 'todos') return true; if (!r.avisado) return false; if (f === 'outro') return r.meioAviso === 'ligacao' || r.meioAviso === 'pessoalmente'; return r.meioAviso === f; }
@@ -1675,13 +1683,21 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       catch (e2){ toast('Pasta não criada: ' + driveErr(e2)); b.disabled = false; b.lastChild.textContent = 'Criar pasta'; }
       return;
     }
+    if (b.dataset.act === 'modo'){
+      var on = b.dataset.v === 'o'; if (!!r.online === on) return;
+      try { await patchRow(r.id, { online: on, atualizadoEm: new Date().toISOString() });
+        toast((on ? 'Audiência online: ' : 'Audiência presencial: ') + (r.nome || ''), 'Desfazer', function(){ patchRow(r.id, { online: !on }).catch(function(e3){ toast(errMsg(e3)); }); }); }
+      catch(err){ toast(errMsg(err)); }
+      return;
+    }
     if (b.dataset.act === 'tel'){
       var wrap = document.createElement('span'); wrap.className = 'tel-wrap';
       var inp = document.createElement('input'); inp.className = 'tel-in'; inp.placeholder = 'Telefone ou nome de um cliente'; inp.autocomplete = 'off';
+      var jaTinha = temContato(r); if (temTelefone(r)) inp.value = r.contato;
       var lista = document.createElement('div'); lista.className = 'tel-lista'; lista.hidden = true;
       wrap.appendChild(inp); wrap.appendChild(lista); b.replaceWith(wrap); inp.focus();
       var feito = false, achados = [], marcado = 0;
-      function carimbo(){ return { telefoneAdicionadoEm: new Date().toISOString(), telefoneAdicionadoPor: state.me ? state.me.email : '', foraDaRegua: true, semWhatsApp: null, atualizadoEm: new Date().toISOString() }; }
+      function carimbo(){ return jaTinha ? { semWhatsApp: null, atualizadoEm: new Date().toISOString() } : { telefoneAdicionadoEm: new Date().toISOString(), telefoneAdicionadoPor: state.me ? state.me.email : '', foraDaRegua: true, semWhatsApp: null, atualizadoEm: new Date().toISOString() }; }
       function mostrar(){
         lista.innerHTML = achados.map(function(c, i){ return '<button type="button" data-i="' + i + '" class="' + (i === marcado ? 'sel' : '') + '">' + esc(c.nome) + '<br><small>' + esc(c.contato) + ' · audiência ' + (c.audData ? fmtShort(c.audData) : '—') + '</small></button>'; }).join('') || '<button type="button" disabled><small>Nenhum cliente com telefone encontrado</small></button>';
         lista.hidden = false;
@@ -1702,7 +1718,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       async function salvarTel(){
         if (feito) return;
         var v = inp.value.trim();
-        if (!v){ feito = true; renderList(); return; }
+        if (!v || v === r.contato){ feito = true; renderList(); return; }
         if (achados.length && !/^[\d\s()+-]+$/.test(v)){ ligar(achados[marcado]); return; }
         if (digits(v).length < 10){ toast('Digite o telefone com DDD, ou o nome de um cliente e escolha na lista'); return; }
         feito = true;
@@ -1716,7 +1732,8 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
         else if (ev.key === 'Enter'){ ev.preventDefault(); salvarTel(); }
         else if (ev.key === 'Escape'){ feito = true; renderList(); }
       });
-      inp.addEventListener('blur', function(){ setTimeout(function(){ if (!feito && !inp.value.trim()){ feito = true; renderList(); } else if (!feito) lista.hidden = true; }, 150); });
+      inp.addEventListener('blur', function(){ setTimeout(function(){ if (!feito && (!inp.value.trim() || inp.value.trim() === r.contato)){ feito = true; renderList(); } else if (!feito) lista.hidden = true; }, 150); });
+      inp.select();
       return;
     }
     if (b.dataset.act === 'aviso' && !r.avisado){ abrirAviso(r); return; }

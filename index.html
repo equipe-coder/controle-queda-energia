@@ -903,7 +903,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     return state.prosp.find(function(p){ return (p.palavrasEndereco || []).some(function(k){ return k && e.indexOf(norm(k)) >= 0; }); });
   }
   function precisaConvite(r){ return isFuture(r) && !r.avisado && sit(r) === 'sem_contato'; } // only clients nobody can reach; missing phones are a registration task, not a convite
-  function passTel(r, f){ if (!f || f === 'todos') return true; if (f === 'novo') return !!(r.contato && r.telefoneAdicionadoEm); return f === 'sem' ? !r.contato : !!r.contato; }
+  function passTel(r, f){ if (!f || f === 'todos') return true; if (f === 'novo') return !!(r.contato && r.telefoneAdicionadoEm); if (f === 'prosp') return pelaProsp(r); if (f === 'sem') return !temTelefone(r) && !pelaProsp(r); return temTelefone(r); }
   function passResp(r, f){ if (!f) return true; if (f === '-') return !prospName(r.responsavelId); return r.responsavelId === f; }
   function fmtAny(s){ if (!s) return ''; return /^\d{4}-\d{2}-\d{2}$/.test(s) ? fmtDate(s) : new Date(s).toLocaleDateString('pt-BR'); }
   function isFuture(r){ var n = daysUntil(r.audData); return n != null && n >= 0; }
@@ -975,8 +975,14 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     }
     return true;
   }
+  // no phone of their own, reached through the prospector (e.g. Dona Lene in Curumitá)
+  function temTelefone(r){ return digits(r.contato).length >= 10; }
+  function pelaProsp(r){ return !temTelefone(r) && !!prospName(r.responsavelId); }
+  function rotuloProsp(r){ var n = prospName(r.responsavelId); return (/^dona/i.test(n) ? 'Prospectadora: ' : 'Prospector: ') + n; }
   function telCell(r){
-    if (!r.contato) return '<button type="button" class="tel-add" data-act="tel" data-id="' + esc(r.id) + '">+ telefone</button>';
+    var add = '<button type="button" class="tel-add" data-act="tel" data-id="' + esc(r.id) + '">+ telefone</button>';
+    if (pelaProsp(r)) return '<div class="cell-stack"><div class="val">' + esc(rotuloProsp(r)) + '</div>' + add + '</div>';
+    if (!r.contato) return add;
     return '<div class="val tnum">' + esc(r.contato) + '</div>'; // filled-in phones are found with Mais filtros > Telefone > Preenchidos agora
   }
   function audCell(r){
@@ -1008,7 +1014,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   function renderStats(){
     var rows = state.rows, fut = rows.filter(isFuture);
     var comProc = rows.filter(function(r){ return r.processo; }).length;
-    var semTel = rows.filter(function(r){ return !r.contato; }).length;
+    var semTel = rows.filter(function(r){ return !temTelefone(r) && !pelaProsp(r); }).length, viaProsp = rows.filter(pelaProsp).length;
     var avis = fut.filter(function(r){ return r.avisado; });
     var sc = fut.filter(function(r){ return sit(r) === 'sem_contato'; }).length;
     var pend = fut.length - avis.length;
@@ -1018,7 +1024,8 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     $('s-total').textContent = rows.length;
     $('s-total-c').innerHTML = comProc + ' com nº de processo · ' + (semTel ? '<button type="button" class="stat-link" id="s-semtel" title="Ver só os clientes sem telefone"><span class="tnum">' + semTel + '</span> sem telefone</button>' : '0 sem telefone');
     $('v-total').innerHTML = stackBar([
-      { l: 'Com telefone', n: rows.length - semTel, c: cssVar('--blue') },
+      { l: 'Com telefone', n: rows.length - semTel - viaProsp, c: cssVar('--blue') },
+      { l: 'Prospectador', n: viaProsp, c: cssVar('--amber') },
       { l: 'Sem telefone', n: semTel, c: cssVar('--line-2') }
     ]);
 
@@ -1093,7 +1100,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     'fb-aviso': ['filter', 'aviso', [['todos', 'Todos'], ['avisar', 'A avisar'], ['semcontato', 'Sem contato'], ['pendente', 'Não avisados (os dois)'], ['avisado', 'Avisados']]],
     'fb-meio': ['meio', 'meio', [['todos', 'Todos'], ['whatsapp', 'WhatsApp'], ['convite', 'Convite'], ['prospectador', 'Prospectador'], ['outro', 'Ligação ou pessoalmente']]],
     'fb-aud': ['aud', 'aud', [['todas', 'Todas'], ['semana', 'Próximos 7 dias'], ['online', 'Online'], ['sem', 'Sem data']]],
-    'fb-tel': ['tel', 'tel', [['todos', 'Todos'], ['com', 'Com telefone'], ['sem', 'Sem telefone'], ['novo', 'Preenchidos agora']]]
+    'fb-tel': ['tel', 'tel', [['todos', 'Todos'], ['com', 'Com telefone'], ['sem', 'Sem telefone'], ['prosp', 'Pelo prospectador'], ['novo', 'Preenchidos agora']]]
   };
   function renderFilters(shown){
     var rows = state.rows, conta = function(o){ return rows.filter(function(r){ return matches(r, o); }).length; };

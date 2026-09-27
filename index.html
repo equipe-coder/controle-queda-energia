@@ -978,7 +978,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   // no phone of their own, reached through the prospector (e.g. Dona Lene in Curumitá)
   function temTelefone(r){ return digits(r.contato).length >= 10; }
   function pelaProsp(r){ return !temTelefone(r) && !!prospName(r.responsavelId); }
-  function rotuloProsp(r){ var n = prospName(r.responsavelId); return (/^dona/i.test(n) ? 'Prospectadora: ' : 'Prospector: ') + n; }
+  function rotuloProsp(r){ var n = prospName(r.responsavelId); return (n.toLowerCase().indexOf('dona ') === 0 ? 'Prospectadora: ' : 'Prospector: ') + n; }
   function telCell(r){
     var add = '<button type="button" class="tel-add" data-act="tel" data-id="' + esc(r.id) + '">+ telefone</button>';
     if (pelaProsp(r)) return '<div class="cell-stack"><div class="val">' + esc(rotuloProsp(r)) + '</div>' + add + '</div>';

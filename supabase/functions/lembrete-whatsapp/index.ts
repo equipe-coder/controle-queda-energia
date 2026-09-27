@@ -111,7 +111,7 @@ function texto(modelo: string, g: Grupo, envio: string) {
 }
 
 /* ---------------- régua ---------------- */
-type Cli = { id: string; nome: string; contato: string; audData: string; audHora: string; audMarcadaEm?: string; online?: boolean; foraDaRegua?: boolean };
+type Cli = { id: string; nome: string; contato: string; audData: string; audHora: string; audMarcadaEm?: string; online?: boolean; foraDaRegua?: boolean; contatoVia?: string };
 type Grupo = { numero: string; aud: string; hora: string; marcada: string; clientes: Cli[] };
 type Passo = { etapa: string; data: string; ate: string };
 
@@ -128,9 +128,12 @@ async function carregarClientes(): Promise<Cli[]> {
 // um aviso por número e por data de audiência (parentes com o mesmo telefone recebem uma mensagem só)
 function grupos(clientes: Cli[], hoje: string): Grupo[] {
   const m = new Map<string, Grupo>();
+  const porId = new Map(clientes.map((c) => [c.id, c]));
   for (const c of clientes) {
     if (c.foraDaRegua) continue; // telefone preenchido agora: só entra quando liberado no cadastro
-    const n = numeroBase(c.contato); if (!n || !c.audData || c.audData <= hoje) continue;
+    // sem telefone próprio: usa o telefone do cliente pelo qual é avisado (irmão, mãe…)
+    const via = !numeroBase(c.contato) && c.contatoVia ? porId.get(c.contatoVia) : undefined;
+    const n = numeroBase(c.contato) || (via ? numeroBase(via.contato) : ''); if (!n || !c.audData || c.audData <= hoje) continue;
     const k = n + '|' + c.audData;
     const g = m.get(k) || { numero: n, aud: c.audData, hora: c.audHora || '', marcada: '', clientes: [] };
     g.clientes.push(c);

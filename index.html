@@ -73,6 +73,11 @@ body{margin:0}
 .integ-s{font-size:12px;color:var(--ink-3);margin-top:4px}
 .tel-add{border:1px dashed var(--line-2);background:none;border-radius:8px;padding:3px 9px;font-size:12px;font-weight:600;color:var(--blue)}
 .tel-add:hover{border-color:var(--blue)}
+.tel-wrap{position:relative;display:inline-block}
+.tel-lista{position:absolute;z-index:30;top:100%;left:0;margin-top:4px;min-width:260px;max-height:220px;overflow:auto;background:var(--panel);border:1px solid var(--line-2);border-radius:9px;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+.tel-lista button{display:block;width:100%;text-align:left;border:0;background:none;padding:7px 10px;font-size:12.5px}
+.tel-lista button:hover,.tel-lista button.sel{background:var(--hover)}
+.tel-lista small{color:var(--ink-3)}
 .tel-in{width:150px;padding:4px 8px;font-size:12.5px;border:1px solid var(--blue);border-radius:8px}
 .chk{display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer}
 .integ-grid{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}
@@ -704,6 +709,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       <div class="field"><label for="f-rg">RG</label><input id="f-rg" class="tnum"></div>
       <div class="field full"><label for="f-end">Endereço</label><input id="f-end" placeholder="Rua, número, bairro, cidade/UF"></div>
       <div class="field full"><label for="f-contato">Contato (telefone / WhatsApp)</label><input id="f-contato" inputmode="tel" placeholder="(97) 00000-0000" class="tnum"></div>
+      <div class="field full" id="f-via-box" hidden><label>Avisado via outro cliente</label><div class="integ-row"><span id="f-via-nome" class="val"></span><button type="button" class="btn" id="f-via-tirar" style="padding:5px 10px;font-size:12.5px">Desfazer vínculo</button></div></div>
       <div class="field full"><label class="chk"><input id="f-regua" type="checkbox"> Enviar avisos automáticos por WhatsApp para este cliente</label><span class="hint">Telefones preenchidos agora ficam fora da régua até você marcar aqui.</span></div>
 
       <div class="section-lbl">Processo</div>
@@ -903,7 +909,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     return state.prosp.find(function(p){ return (p.palavrasEndereco || []).some(function(k){ return k && e.indexOf(norm(k)) >= 0; }); });
   }
   function precisaConvite(r){ return isFuture(r) && !r.avisado && sit(r) === 'sem_contato'; } // only clients nobody can reach; missing phones are a registration task, not a convite
-  function passTel(r, f){ if (!f || f === 'todos') return true; if (f === 'novo') return !!(r.contato && r.telefoneAdicionadoEm); if (f === 'prosp') return pelaProsp(r); if (f === 'sem') return !temTelefone(r) && !pelaProsp(r); return temTelefone(r); }
+  function passTel(r, f){ if (!f || f === 'todos') return true; if (f === 'novo') return !!(r.contato && r.telefoneAdicionadoEm); if (f === 'prosp') return pelaProsp(r); if (f === 'via') return !!clienteVia(r); if (f === 'sem') return !temContato(r) && !pelaProsp(r); return temTelefone(r); }
   function passResp(r, f){ if (!f) return true; if (f === '-') return !prospName(r.responsavelId); return r.responsavelId === f; }
   function fmtAny(s){ if (!s) return ''; return /^\d{4}-\d{2}-\d{2}$/.test(s) ? fmtDate(s) : new Date(s).toLocaleDateString('pt-BR'); }
   function isFuture(r){ var n = daysUntil(r.audData); return n != null && n >= 0; }
@@ -977,10 +983,14 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   }
   // no phone of their own, reached through the prospector (e.g. Dona Lene in Curumitá)
   function temTelefone(r){ return digits(r.contato).length >= 10; }
-  function pelaProsp(r){ return !temTelefone(r) && !!prospName(r.responsavelId); }
+  function clienteVia(r){ if (temTelefone(r) || !r.contatoVia) return null; var v = state.rows.filter(function(x){ return x.id === r.contatoVia; })[0]; return v && temTelefone(v) ? v : null; }
+  function temContato(r){ return temTelefone(r) || !!clienteVia(r); }
+  function pelaProsp(r){ return !temContato(r) && !!prospName(r.responsavelId); }
   function rotuloProsp(r){ var n = prospName(r.responsavelId); return (n.toLowerCase().indexOf('dona ') === 0 ? 'Prospectadora: ' : 'Prospector: ') + n; }
   function telCell(r){
-    var add = '<button type="button" class="tel-add" data-act="tel" data-id="' + esc(r.id) + '">+ telefone</button>';
+    var add = '<button type="button" class="tel-add" data-act="tel" data-id="' + esc(r.id) + '" title="Digite o telefone ou o nome de um cliente que avisa esta pessoa">+ contato</button>';
+    var via = clienteVia(r);
+    if (via) return '<div class="cell-stack"><div class="val" style="font-size:12.5px">Via ' + esc(via.nome) + '</div><div class="small tnum">' + esc(via.contato) + '</div></div>';
     if (pelaProsp(r)) return '<div class="cell-stack"><div class="val">' + esc(rotuloProsp(r)) + '</div>' + add + '</div>';
     if (!r.contato) return add;
     return '<div class="val tnum">' + esc(r.contato) + '</div>'; // filled-in phones are found with Mais filtros > Telefone > Preenchidos agora
@@ -1014,7 +1024,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   function renderStats(){
     var rows = state.rows, fut = rows.filter(isFuture);
     var comProc = rows.filter(function(r){ return r.processo; }).length;
-    var semTel = rows.filter(function(r){ return !temTelefone(r) && !pelaProsp(r); }).length, viaProsp = rows.filter(pelaProsp).length;
+    var semTel = rows.filter(function(r){ return !temContato(r) && !pelaProsp(r); }).length, viaProsp = rows.filter(pelaProsp).length, viaCli = rows.filter(function(r){ return !!clienteVia(r); }).length;
     var avis = fut.filter(function(r){ return r.avisado; });
     var sc = fut.filter(function(r){ return sit(r) === 'sem_contato'; }).length;
     var pend = fut.length - avis.length;
@@ -1024,7 +1034,8 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     $('s-total').textContent = rows.length;
     $('s-total-c').innerHTML = comProc + ' com nº de processo · ' + (semTel ? '<button type="button" class="stat-link" id="s-semtel" title="Ver só os clientes sem telefone"><span class="tnum">' + semTel + '</span> sem telefone</button>' : '0 sem telefone');
     $('v-total').innerHTML = stackBar([
-      { l: 'Com telefone', n: rows.length - semTel - viaProsp, c: cssVar('--blue') },
+      { l: 'Com telefone', n: rows.length - semTel - viaProsp - viaCli, c: cssVar('--blue') },
+      { l: 'Via outro cliente', n: viaCli, c: cssVar('--purple') },
       { l: 'Prospectador', n: viaProsp, c: cssVar('--amber') },
       { l: 'Sem telefone', n: semTel, c: cssVar('--line-2') }
     ]);
@@ -1100,7 +1111,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     'fb-aviso': ['filter', 'aviso', [['todos', 'Todos'], ['avisar', 'A avisar'], ['semcontato', 'Sem contato'], ['pendente', 'Não avisados (os dois)'], ['avisado', 'Avisados']]],
     'fb-meio': ['meio', 'meio', [['todos', 'Todos'], ['whatsapp', 'WhatsApp'], ['convite', 'Convite'], ['prospectador', 'Prospectador'], ['outro', 'Ligação ou pessoalmente']]],
     'fb-aud': ['aud', 'aud', [['todas', 'Todas'], ['semana', 'Próximos 7 dias'], ['online', 'Online'], ['sem', 'Sem data']]],
-    'fb-tel': ['tel', 'tel', [['todos', 'Todos'], ['com', 'Com telefone'], ['sem', 'Sem telefone'], ['prosp', 'Pelo prospectador'], ['novo', 'Preenchidos agora']]]
+    'fb-tel': ['tel', 'tel', [['todos', 'Todos'], ['com', 'Com telefone'], ['sem', 'Sem telefone'], ['via', 'Via outro cliente'], ['prosp', 'Pelo prospectador'], ['novo', 'Preenchidos agora']]]
   };
   function renderFilters(shown){
     var rows = state.rows, conta = function(o){ return rows.filter(function(r){ return matches(r, o); }).length; };
@@ -1472,7 +1483,9 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     $('f-end').value = r ? r.endereco || '' : '';
     $('f-contato').value = r ? r.contato || '' : '';
     // clients still without a phone start unchecked: a number filled in now stays out of the régua until released
-    $('f-regua').checked = r ? (!!r.contato && !r.foraDaRegua) : true;
+    $('f-regua').checked = r ? (temContato(r) && !r.foraDaRegua) : true;
+    var vc = r ? clienteVia(r) : null; $('f-via-box').hidden = !vc; $('f-via-box').dataset.tirar = '';
+    if (vc) $('f-via-nome').textContent = vc.nome + ' · ' + vc.contato;
     $('f-data').value = r ? r.audData || '' : '';
     $('f-hora').value = r ? r.audHora || '' : '';
     $('f-online').checked = !!(r && r.online);
@@ -1531,6 +1544,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     var data = Object.assign({}, prev, {
       nome: nome, cpf: $('f-cpf').value.trim(), rg: $('f-rg').value.trim(), endereco: $('f-end').value.trim(),
       contato: $('f-contato').value.trim(), foraDaRegua: !$('f-regua').checked,
+      contatoVia: $('f-via-box').dataset.tirar ? null : (prev.contatoVia || null),
       telefoneAdicionadoEm: !prev.contato && $('f-contato').value.trim() ? new Date().toISOString() : (prev.telefoneAdicionadoEm || ''),
       telefoneAdicionadoPor: !prev.contato && $('f-contato').value.trim() ? (state.me ? state.me.email : '') : (prev.telefoneAdicionadoPor || ''), audData: $('f-data').value || '', audHora: $('f-hora').value || '', online: $('f-online').checked,
       // day the hearing was set (starts the régua); kept while the date stays the same
@@ -1557,6 +1571,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
 
   /* ---------- events ---------- */
   $('btn-novo').addEventListener('click', function(){ openForm(null); });
+  $('f-via-tirar').addEventListener('click', function(){ $('f-via-box').dataset.tirar = '1'; $('f-via-nome').textContent = 'Vínculo será removido ao salvar'; });
   $('q').addEventListener('input', function(e){ state.q = e.target.value.trim(); state.limit = 100; renderList(); });
   $('fb-rapido').addEventListener('click', function(e){
     var b = e.target.closest('[data-p]'); if (!b) return;
@@ -1609,19 +1624,47 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       return;
     }
     if (b.dataset.act === 'tel'){
-      var inp = document.createElement('input'); inp.className = 'tel-in tnum'; inp.inputMode = 'tel'; inp.placeholder = '(97) 00000-0000';
-      b.replaceWith(inp); inp.focus();
-      inp.addEventListener('input', function(){ inp.value = maskTel(inp.value); });
-      var feito = false;
-      async function salvarTel(){
+      var wrap = document.createElement('span'); wrap.className = 'tel-wrap';
+      var inp = document.createElement('input'); inp.className = 'tel-in'; inp.placeholder = 'Telefone ou nome de um cliente'; inp.autocomplete = 'off';
+      var lista = document.createElement('div'); lista.className = 'tel-lista'; lista.hidden = true;
+      wrap.appendChild(inp); wrap.appendChild(lista); b.replaceWith(wrap); inp.focus();
+      var feito = false, achados = [], marcado = 0;
+      function carimbo(){ return { telefoneAdicionadoEm: new Date().toISOString(), telefoneAdicionadoPor: state.me ? state.me.email : '', foraDaRegua: true, semWhatsApp: null, atualizadoEm: new Date().toISOString() }; }
+      function mostrar(){
+        lista.innerHTML = achados.map(function(c, i){ return '<button type="button" data-i="' + i + '" class="' + (i === marcado ? 'sel' : '') + '">' + esc(c.nome) + '<br><small>' + esc(c.contato) + ' · audiência ' + (c.audData ? fmtShort(c.audData) : '—') + '</small></button>'; }).join('') || '<button type="button" disabled><small>Nenhum cliente com telefone encontrado</small></button>';
+        lista.hidden = false;
+      }
+      inp.addEventListener('input', function(){
+        var v = inp.value;
+        if (/^[\d\s()+-]+$/.test(v) && digits(v).length){ inp.value = maskTel(v); lista.hidden = true; achados = []; return; }
+        var q = v.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        if (q.length < 3){ lista.hidden = true; achados = []; return; }
+        achados = state.rows.filter(function(c){ return c.id !== r.id && temTelefone(c) && String(c.nome || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').indexOf(q) >= 0; }).slice(0, 8);
+        marcado = 0; mostrar();
+      });
+      async function ligar(c){
         if (feito) return; feito = true;
-        var v = inp.value.trim();
-        if (digits(v).length < 10){ if (v) toast('Número incompleto: informe DDD e telefone'); renderList(); return; }
-        try { await patchRow(r.id, { contato: v, telefoneAdicionadoEm: new Date().toISOString(), telefoneAdicionadoPor: state.me ? state.me.email : '', foraDaRegua: true, semWhatsApp: null, atualizadoEm: new Date().toISOString() }); toast('Telefone salvo: ' + (r.nome || '')); }
+        try { await patchRow(r.id, Object.assign({ contatoVia: c.id }, carimbo())); toast(r.nome + ' será avisado(a) via ' + c.nome); }
         catch(err){ toast(errMsg(err)); renderList(); }
       }
-      inp.addEventListener('keydown', function(ev){ if (ev.key === 'Enter'){ ev.preventDefault(); salvarTel(); } else if (ev.key === 'Escape'){ feito = true; renderList(); } });
-      inp.addEventListener('blur', function(){ if (inp.value.trim()) salvarTel(); else { feito = true; renderList(); } });
+      async function salvarTel(){
+        if (feito) return;
+        var v = inp.value.trim();
+        if (!v){ feito = true; renderList(); return; }
+        if (achados.length && !/^[\d\s()+-]+$/.test(v)){ ligar(achados[marcado]); return; }
+        if (digits(v).length < 10){ toast('Digite o telefone com DDD, ou o nome de um cliente e escolha na lista'); return; }
+        feito = true;
+        try { await patchRow(r.id, Object.assign({ contato: v, contatoVia: null }, carimbo())); toast('Telefone salvo: ' + (r.nome || '')); }
+        catch(err){ toast(errMsg(err)); renderList(); }
+      }
+      lista.addEventListener('mousedown', function(ev){ var x = ev.target.closest('[data-i]'); if (x){ ev.preventDefault(); ligar(achados[+x.dataset.i]); } });
+      inp.addEventListener('keydown', function(ev){
+        if (ev.key === 'ArrowDown' && achados.length){ ev.preventDefault(); marcado = (marcado + 1) % achados.length; mostrar(); }
+        else if (ev.key === 'ArrowUp' && achados.length){ ev.preventDefault(); marcado = (marcado - 1 + achados.length) % achados.length; mostrar(); }
+        else if (ev.key === 'Enter'){ ev.preventDefault(); salvarTel(); }
+        else if (ev.key === 'Escape'){ feito = true; renderList(); }
+      });
+      inp.addEventListener('blur', function(){ setTimeout(function(){ if (!feito && !inp.value.trim()){ feito = true; renderList(); } else if (!feito) lista.hidden = true; }, 150); });
       return;
     }
     if (b.dataset.act === 'aviso' && !r.avisado){ abrirAviso(r); return; }

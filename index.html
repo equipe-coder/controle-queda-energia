@@ -2126,10 +2126,23 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     function shrink(txt, font, size, width, min){ doc.setFont('helvetica', font); doc.setFontSize(size); var w = doc.getTextWidth(txt); return w > width ? Math.max(min, size * width / w) : size; }
     function label(txt, x, y){ doc.setFont('helvetica', 'bold'); doc.setFontSize(6.6); ink(C.teal); doc.setCharSpace(0.4); doc.text(txt, x, y); doc.setCharSpace(0); }
 
+    // one title per hearing session (date + time) at the top of its first page; the invitations follow
+    var TIT = 15, porSessao = {}, sessao = null, slot = 0, topo = 0;
+    lista.forEach(function(r){ var c = r.audData + '|' + (r.audHora || ''); porSessao[c] = (porSessao[c] || 0) + 1; });
+    function tituloSessao(r){
+      var total = porSessao[r.audData + '|' + (r.audHora || '')];
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(13); ink(C.teal); doc.setCharSpace(0.2);
+      doc.text('AUDIÊNCIA · ' + fmtDate(r.audData) + ' · ' + pdfDiaSemana(r.audData) + (r.audHora ? ' · ' + r.audHora.slice(0, 5) : ''), 8, 9.5);
+      doc.setCharSpace(0); doc.setFont('helvetica', 'normal'); doc.setFontSize(9); ink(C.sub);
+      doc.text(total + (total === 1 ? ' convite' : ' convites'), 202, 9.5, { align: 'right' });
+      draw(C.teal); doc.setLineWidth(0.5); doc.line(8, 12, 202, 12);
+    }
     lista.forEach(function(r, i){
-      var k = i % (COLS * ROWS);
-      if (i && k === 0) doc.addPage();
-      var x = (k % COLS) * W, y = Math.floor(k / COLS) * H;
+      var chave = r.audData + '|' + (r.audHora || '');
+      if (chave !== sessao){ if (i) doc.addPage(); sessao = chave; slot = 0; topo = TIT; tituloSessao(r); }
+      else if (slot === COLS * ROWS){ doc.addPage(); slot = 0; topo = 0; }
+      var k = slot++, H = (297 - topo) / ROWS;
+      var x = (k % COLS) * W, y = topo + Math.floor(k / COLS) * H;
       var ix = x + INSET, iy = y + INSET, iw = W - 2 * INSET, ih = H - 2 * INSET, pad = 6, tx = ix + pad, tw = iw - 2 * pad;
 
       // cut guide + card

@@ -158,6 +158,7 @@ function horaConvite(h: string) { if (!h) return 'horário a confirmar'; const [
 const primeiro = (n: string) => String(n || '').trim().split(/\s+/)[0] || '';
 const nomes = (a: string[]) => a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' e ' + a[a.length - 1];
 function texto(modelo: string, g: Grupo, envio: string) {
+  modelo = modelo.split('{local}').join(LOCAL);
   const dias = diasEntre(envio, g.aud);
   const quando = dias <= 1 ? 'amanhã' : 'na ' + DIAS[diaSemana(g.aud)] + ', ' + g.aud.slice(8, 10) + '/' + g.aud.slice(5, 7);
   const aud = '📅 *' + dataLonga(g.aud) + '*\n🕑 *' + horaConvite(g.hora) + '*';
@@ -356,6 +357,27 @@ Deno.serve(async (req) => {
         out.push(item);
       }
       return json({ conexao, nome, resultado: out });
+    }
+
+    // lembrete avulso: um número por chamada (o site espaça as chamadas); não repete para o mesmo número e audiência
+    if (body.acao === 'avulso') {
+      const cfg = await lerConfig(), hoje = hojeMao();
+      if (!cfg.conexao) return json({ erro: 'Escolha o número que envia na régua.' }, 400);
+      const modelo = String(body.texto || '');
+      if (modelo.trim().length < 10) return json({ erro: 'Mensagem vazia.' }, 400);
+      const todos = await carregarClientes(), porId = new Map(todos.map((c) => [c.id, c]));
+      const cs = (Array.isArray(body.ids) ? body.ids : []).map((i: unknown) => porId.get(String(i))).filter(Boolean) as Cli[];
+      if (!cs.length) return json({ erro: 'Cliente não encontrado.' }, 400);
+      const c0 = cs[0], via = !numeroBase(c0.contato) && c0.contatoVia ? porId.get(c0.contatoVia) : undefined;
+      const numero = numeroBase(c0.contato) || (via ? numeroBase(via.contato) : '');
+      if (!numero) return json({ erro: 'Cliente sem telefone.' }, 400);
+      if (!c0.audData || c0.audData <= hoje) return json({ erro: 'Audiência já passou.' }, 400);
+      const { data: ja } = await adm.from('avisos_log').select('id').eq('numero', numero).eq('etapa', 'avulso').eq('aud_data', c0.audData).eq('status', 'enviado').limit(1);
+      if (ja && ja.length) return json({ ok: true, pulado: true, numero });
+      const g: Grupo = { numero, aud: c0.audData, hora: c0.audHora || '', marcada: '', clientes: cs };
+      const r = await enviarTexto(key, cfg.conexao, numero, nomeDoNumero(todos, numero, cs.map((c) => c.nome).join(' / ')), texto(modelo, g, hoje));
+      await adm.from('avisos_log').insert({ numero, clientes: cs.map((c) => c.id), etapa: 'avulso', aud_data: g.aud, status: r.ok ? 'enviado' : r.semWhats ? 'sem_whatsapp' : 'erro', erro: r.ok ? null : r.erro });
+      return json({ ok: r.ok, semWhats: r.semWhats, erro: r.ok ? null : r.erro, numero });
     }
 
     // teste: manda a etapa escolhida, com os dados do primeiro cliente da régua, para o número informado

@@ -572,7 +572,6 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   </header>
 
   <nav class="tabs" role="tablist">
-    <button class="tab" role="tab" id="tab-cad" aria-selected="false" type="button">Cadastro</button>
     <button class="tab" role="tab" id="tab-clientes" aria-selected="true" type="button">Audiências</button>
     <button class="tab" role="tab" id="tab-lista" aria-selected="false" type="button">Clientes</button>
     <button class="tab" role="tab" id="tab-pos" aria-selected="false" type="button">Pós-audiência</button>
@@ -582,10 +581,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
 
   <div class="banner" id="banner" hidden></div>
 
-      <section id="view-cad" hidden style="display:flex;flex-direction:column;gap:14px">
-        <p class="view-desc">Cadastre o cliente aqui. Ao salvar, ele aparece em Audiências e em Clientes. A pasta do Drive pode ser colada no campo Pasta do cliente.</p>
-        <div class="card cad-box" id="cad-box"></div>
-      </section>
+      <div id="cad-box" hidden></div>
 
       <section id="view-lista" hidden style="display:flex;flex-direction:column;gap:14px">
         <div class="card etapas" id="cl-etapas"></div>
@@ -1785,7 +1781,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   });
 
   /* ---------- events ---------- */
-  $('btn-novo').addEventListener('click', function(){ showTab('n'); });
+  $('btn-novo').addEventListener('click', function(){ openForm(null); });
   $('f-via-tirar').addEventListener('click', function(){ $('f-via-box').dataset.tirar = '1'; $('f-via-nome').textContent = 'Vínculo será removido ao salvar'; });
   $('q').addEventListener('input', function(e){ state.q = e.target.value.trim(); state.limit = 100; renderList(); });
   $('fb-rapido').addEventListener('click', function(e){
@@ -1952,12 +1948,11 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     } catch(err){ toast(errMsg(err)); }
     finally { $('av-save').disabled = false; }
   });
-  var VIEWS = { n: ['tab-cad', 'view-cad'], c: ['tab-clientes', 'view-clientes'], l: ['tab-lista', 'view-lista'], p: ['tab-pos', 'view-pos'], r: ['tab-ret', 'view-ret'], e: ['tab-equipe', 'view-equipe'] };
+  var VIEWS = { c: ['tab-clientes', 'view-clientes'], l: ['tab-lista', 'view-lista'], p: ['tab-pos', 'view-pos'], r: ['tab-ret', 'view-ret'], e: ['tab-equipe', 'view-equipe'] };
   function showTab(which){
     state.view = which;
     if (which === 'e' && !isAdmin()) which = 'c';
-    $('btn-novo').hidden = which === 'n' || which === 'e';
-    if (which === 'n') openForm(null, true);
+    $('btn-novo').hidden = which === 'e';
     Object.keys(VIEWS).forEach(function(k){ $(VIEWS[k][0]).setAttribute('aria-selected', k === which ? 'true' : 'false'); $(VIEWS[k][1]).hidden = k !== which; });
     try { sessionStorage.setItem('qe-view', which); } catch(e){}
   }

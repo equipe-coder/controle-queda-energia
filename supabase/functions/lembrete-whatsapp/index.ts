@@ -53,6 +53,64 @@ function numeroBase(numero: string): string {
   return d.length === 10 ? d : '';
 }
 
+/* ---------------- tribunal (DataJud / CNJ) ---------------- */
+const DATAJUD_TJAM = 'https://api-publica.datajud.cnj.jus.br/api_publica_tjam/_search';
+const semAcento = (t: string) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+// what matters for this product, read from the movement names (TPU/CNJ)
+function tipoMovimento(m: any): string {
+  const t = semAcento((m?.nome || '') + ' ' + (m?.complementosTabelados || []).map((c: any) => (c?.nome || '') + ' ' + (c?.descricao || '')).join(' '));
+  if (t.includes('transito em julgado')) return 'transito';
+  if (t.includes('alvara')) return 'alvara';
+  if (t.includes('embargos')) return 'embargos';
+  if (t.includes('sentenca') || t.includes('julgad') || t.includes('procedente') || t.includes('extincao') || t.includes('extinto')) return 'sentenca';
+  if (t.includes('audiencia') && (t.includes('designad') || t.includes('redesignad') || t.includes('marcad'))) return 'audiencia_designada';
+  if (t.includes('audiencia') && (t.includes('realizad') || t.includes('nao realizad'))) return 'audiencia_realizada';
+  if (t.includes('conclus')) return 'concluso';
+  return '';
+}
+async function sincronizarTribunal(): Promise<any> {
+  const { data: seg } = await adm.from('segredos').select('valor').eq('nome', 'datajud').maybeSingle();
+  if (!seg?.valor) return { rodou: false, motivo: 'chave do DataJud não cadastrada' };
+  const clientes = await carregarClientes();
+  const porNumero = new Map<string, any[]>();
+  for (const c of clientes as any[]) {
+    const n = String(c.processo || '').replace(/\D/g, '');
+    if (n.length === 20) porNumero.set(n, [...(porNumero.get(n) || []), c]);
+  }
+  const numeros = [...porNumero.keys()];
+  let achados = 0, novidades = 0;
+  for (let i = 0; i < numeros.length; i += 100) {
+    const lote = numeros.slice(i, i + 100);
+    const r = await fetch(DATAJUD_TJAM, {
+      method: 'POST',
+      headers: { 'Authorization': 'APIKey ' + seg.valor, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ size: 100, query: { terms: { numeroProcesso: lote } } }),
+    });
+    if (!r.ok) return { rodou: false, motivo: 'DataJud recusou (' + r.status + ')', achados, novidades };
+    const j = await r.json();
+    for (const h of j?.hits?.hits || []) {
+      const src = h._source || {}, n = String(src.numeroProcesso || '').replace(/\D/g, '');
+      const movs = (src.movimentos || []).slice().sort((a: any, b: any) => String(b.dataHora).localeCompare(String(a.dataHora)));
+      const ultimo = movs[0];
+      const marcos: Record<string, string> = {};
+      for (const m of movs) { const t = tipoMovimento(m); if (t && !marcos[t]) marcos[t] = String(m.dataHora || '').slice(0, 10); }
+      const resumo = { atualizadoEm: new Date().toISOString(), ultimo: ultimo ? { nome: ultimo.nome, data: String(ultimo.dataHora || '').slice(0, 10) } : null, marcos, fonte: src.dataHoraUltimaAtualizacao || null };
+      achados++;
+      for (const c of porNumero.get(n) || []) {
+        const antes = c.tribunal || {};
+        const mudou = JSON.stringify(antes.ultimo || null) !== JSON.stringify(resumo.ultimo) || JSON.stringify(antes.marcos || {}) !== JSON.stringify(marcos);
+        if (!mudou) continue;
+        const novo: any = { tribunal: resumo };
+        // something new in court since the last check: flag it for the team to review
+        if (antes.ultimo && mudou) { novo.tribunalNovidade = { em: new Date().toISOString(), movimento: resumo.ultimo?.nome || '', data: resumo.ultimo?.data || '' }; novidades++; }
+        await adm.rpc('atualizar_doc', { p_tabela: 'clientes', p_id: c.id, p_campos: novo });
+      }
+    }
+  }
+  await adm.rpc('atualizar_doc', { p_tabela: 'config', p_id: 'regua', p_campos: { tribunalConsultaEm: new Date().toISOString(), tribunalAchados: achados } });
+  return { rodou: true, processos: numeros.length, achados, novidades };
+}
+
 async function chaveLiderHub(): Promise<string> {
   const env = Deno.env.get('LIDERHUB_KEY'); if (env) return env;
   const { data } = await adm.from('segredos').select('valor').eq('nome', 'liderhub').maybeSingle();
@@ -237,10 +295,10 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
 
     // chamada do agendador do banco (sem usuário): confere a chave interna
-    if (body.acao === 'regua') {
+    if (body.acao === 'regua' || body.acao === 'tribunal-cron') {
       const { data } = await adm.from('segredos').select('valor').eq('nome', 'regua_token').maybeSingle();
       if (!data?.valor || req.headers.get('x-regua-token') !== data.valor) return json({ erro: 'não autorizado' }, 401);
-      return json(await rodarRegua());
+      return json(body.acao === 'regua' ? await rodarRegua() : await sincronizarTribunal());
     }
 
     // demais ações: só administradores logados no site
@@ -250,6 +308,7 @@ Deno.serve(async (req) => {
     if (funcao !== 'admin') return json({ erro: 'Só administradores podem usar os avisos por WhatsApp.' }, 403);
 
     if (body.acao === 'regua-previa') return json(await previa());
+    if (body.acao === 'tribunal') return json(await sincronizarTribunal());
     if (body.acao === 'regua-modelos') return json({ modelos: MODELOS, etapas: ETAPAS });
 
     // guarda no cofre a chave pública que o agendador usa para chamar esta função

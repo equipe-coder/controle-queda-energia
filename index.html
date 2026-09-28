@@ -724,6 +724,15 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
             <small class="integ-s" id="lh-status">Verificando…</small>
           </form>
         </div>
+        <div class="card integ">
+          <div><b class="integ-t">Tribunal (DataJud · CNJ)</b><p class="integ-d">Consulta todo dia, às 7h, os processos do TJAM e avisa quando aparece audiência designada, sentença, embargos, trânsito em julgado ou alvará. A chave é pública e fica na página do CNJ: <a href="https://datajud-wiki.cnj.jus.br/api-publica/acesso/" target="_blank" rel="noopener">DataJud · Acesso</a>.</p></div>
+          <form id="form-dj" class="integ-form" novalidate autocomplete="off">
+            <label for="dj-chave">Chave pública do DataJud</label>
+            <div class="pw"><input id="dj-chave" type="text" class="mask" autocomplete="off" spellcheck="false" data-lpignore="true" data-1p-ignore placeholder="Cole aqui a chave que está na página do CNJ"></div>
+            <div class="integ-btns"><button class="btn lh-save" type="submit" id="dj-salvar"><svg class="i"><use href="#i-save"/></svg>Salvar</button><button type="button" class="btn" id="dj-agora"><svg class="i"><use href="#i-sync"/></svg>Consultar agora</button></div>
+            <small class="integ-s" id="dj-status">Verificando…</small>
+          </form>
+        </div>
         <div class="card integ regua">
           <div><b class="integ-t">Régua de avisos automáticos</b><p class="integ-d">Quando a audiência é marcada, o sistema avisa o cliente pelo WhatsApp do Pós-venda, sozinho, em cada etapa. Envia poucos por vez, só em dias úteis das 8h às 18h (Manaus), com limite por dia.</p></div>
           <div class="regua-etapas">
@@ -1495,13 +1504,20 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     if (r.processo || r.protocolo) return 'protocolado';
     return 'cadastrado';
   }
-  function nomeEtapa(k){ var e = ETAPAS.filter(function(x){ return x[0] === k; })[0]; return e ? e[1] : k; }
+  function nomeEtapa(k){ if (k === '__novidade') return 'novidades do tribunal'; var e = ETAPAS.filter(function(x){ return x[0] === k; })[0]; return e ? e[1] : k; }
+  function tribunalLinha(r){
+    var t = r.tribunal && r.tribunal.ultimo; if (!t) return '';
+    var nova = r.tribunalNovidade ? ' <button type="button" class="linkbtn" data-act="visto" data-id="' + esc(r.id) + '" title="Marcar como conferido">conferido</button>' : '';
+    return '<div class="mini quebra' + (r.tribunalNovidade ? ' blue' : '') + '" title="Último movimento no tribunal">Tribunal: ' + esc(t.nome) + (t.data ? ' · ' + fmtShort(t.data) : '') + '</div>' + nova;
+  }
   var clEtapa = '';
   function renderEtapas(){
     var box = $('cl-etapas'); if (!box) return;
     var cont = {}; state.rows.forEach(function(r){ var k = etapa(r); cont[k] = (cont[k] || 0) + 1; });
     var total = state.rows.length || 1;
-    box.innerHTML = '<div class="etapas-bar" aria-hidden="true">' + ETAPAS.map(function(e){ return cont[e[0]] ? '<span style="width:' + (cont[e[0]] / total * 100) + '%;background:var(' + e[2] + ')" title="' + e[1] + ': ' + cont[e[0]] + '"></span>' : ''; }).join('') + '</div>' +
+    var novas = state.rows.filter(function(r){ return r.tribunalNovidade; }).length;
+    box.innerHTML = (novas ? '<button type="button" class="btn" data-etapa="__novidade" aria-pressed="' + (clEtapa === '__novidade') + '" style="align-self:flex-start;border-color:var(--blue);color:var(--blue)">' + novas + (novas === 1 ? ' novidade' : ' novidades') + ' do tribunal para conferir</button>' : '') +
+      '<div class="etapas-bar" aria-hidden="true">' + ETAPAS.map(function(e){ return cont[e[0]] ? '<span style="width:' + (cont[e[0]] / total * 100) + '%;background:var(' + e[2] + ')" title="' + e[1] + ': ' + cont[e[0]] + '"></span>' : ''; }).join('') + '</div>' +
       '<div class="etapas-lista" role="group" aria-label="Etapa do processo">' + ETAPAS.map(function(e){
         return '<button type="button" data-etapa="' + e[0] + '" aria-pressed="' + (clEtapa === e[0]) + '"><b>' + (cont[e[0]] || 0) + '</b><span><i style="background:var(' + e[2] + ')"></i>' + e[1] + '</span></button>';
       }).join('') + '</div>';
@@ -1519,6 +1535,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     var q = clQ.toLowerCase(), qd = digits(clQ);
     renderEtapas();
     var lista = state.rows.filter(function(r){
+      if (clEtapa === '__novidade') return !!r.tribunalNovidade;
       if (clEtapa && etapa(r) !== clEtapa) return false;
       if (!clEtapa && !r.processo) return false;
       if (!q) return true;
@@ -1534,7 +1551,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
           '<div><span class="lbl">Processo</span><div class="val" style="font-size:12.5px">' + esc(r.processo || '—') + '</div></div>' +
           '<div><span class="lbl">Contato</span>' + telCell(r) + '</div>' +
           '<div><span class="lbl">Audiência</span><div class="val">' + (r.audData ? fmtShort(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') : '—') + '</div>' + (r.online ? '<div class="mini roxo">Online</div>' : '') + '</div>' +
-          '<div><span class="lbl">Situação</span><div class="val" style="font-size:12.5px">' + esc(situacaoTexto(r)) + '</div></div>' +
+          '<div><span class="lbl">Situação</span><div class="val" style="font-size:12.5px">' + esc(situacaoTexto(r)) + '</div>' + tribunalLinha(r) + '</div>' +
           '<div class="c-act"><button type="button" class="ico-btn" data-act="edit" data-id="' + esc(r.id) + '" title="Editar cadastro" aria-label="Editar ' + esc(r.nome) + '"><svg class="i"><use href="#i-pencil"/></svg></button></div>' +
         '</div>';
       }).join('');
@@ -1821,6 +1838,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       catch (e2){ toast('Pasta não criada: ' + driveErr(e2)); b.disabled = false; b.lastChild.textContent = 'Criar pasta'; }
       return;
     }
+    if (b.dataset.act === 'visto'){ try { await patchRow(r.id, { tribunalNovidade: null }); } catch(err){ toast(errMsg(err)); } return; }
     if (b.dataset.act === 'modo'){
       var on = b.dataset.v === 'o'; if (!!r.online === on) return;
       try { await patchRow(r.id, { online: on, atualizadoEm: new Date().toISOString() });
@@ -2568,7 +2586,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     if (iniciado){ render(); return; }
     iniciado = true;
     state.db = DB;
-    if (f.data === 'admin'){ lhStatus(); rgCarregar(); }
+    if (f.data === 'admin'){ lhStatus(); rgCarregar(); djStatus(); }
     function carimbo(){ var n = new Date(); $('sync').textContent = 'Atualizado: ' + n.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ', ' + n.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); }
     function caiu(){ $('sync').textContent = 'Conexão interrompida'; banner('A conexão com a base foi interrompida. Recarregue a página.'); }
     watchTable('clientes', function(rows){ state.rows = rows; banner(''); carimbo(); render(); }, caiu);
@@ -2630,6 +2648,30 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       st.textContent = cs.length ? 'Conexão OK. Números no workspace: ' + cs.map(function(c){ return c.numero + ' (' + (c.status || '?') + ')'; }).join(', ') : 'A chave funciona, mas o workspace não tem nenhum número conectado.';
     } catch(e2){ st.textContent = 'Falhou: ' + e2.message; }
     finally { this.disabled = false; }
+  });
+
+  /* ---------- tribunal (DataJud) ---------- */
+  async function djStatus(){
+    var r = await SB.rpc('status_segredo', { p_nome: 'datajud' }), d = r.data && r.data[0];
+    var c = await SB.from('config').select('data').eq('id', 'regua').maybeSingle(), cfg = (c.data && c.data.data) || {};
+    if (d){ $('dj-chave').value = '•'.repeat(24) + d.final; $('dj-chave').classList.remove('mask'); }
+    $('dj-status').textContent = (d ? 'Chave cadastrada.' : 'Nenhuma chave cadastrada.') + (cfg.tribunalConsultaEm ? ' Última consulta: ' + new Date(cfg.tribunalConsultaEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) + ' (' + (cfg.tribunalAchados || 0) + ' processos encontrados).' : '');
+  }
+  $('dj-chave').addEventListener('focus', function(){ if (this.value.indexOf('•') === 0) this.select(); });
+  $('dj-chave').addEventListener('input', function(){ this.value = this.value.replace(/•/g, '').trim(); this.classList.add('mask'); });
+  $('form-dj').addEventListener('submit', async function(e){
+    e.preventDefault(); var v = $('dj-chave').value.replace(/•/g, '').trim();
+    if (v.length < 20){ toast('Cole a chave pública do DataJud'); return; }
+    var r = await SB.rpc('salvar_segredo', { p_nome: 'datajud', p_valor: v.replace(/^APIKey\s+/i, '') });
+    if (r.error){ toast('Não foi possível salvar: ' + r.error.message); return; }
+    toast('Chave do DataJud salva'); djStatus();
+  });
+  $('dj-agora').addEventListener('click', async function(){
+    this.disabled = true; $('dj-status').textContent = 'Consultando o tribunal…';
+    try { var r = await SB.functions.invoke('lembrete-whatsapp', { body: { acao: 'tribunal' } }); if (r.error){ var j = r.error.context && r.error.context.json ? await r.error.context.json().catch(function(){ return {}; }) : {}; throw new Error(j.erro || r.error.message); }
+      var d = r.data || {}; toast(d.rodou ? d.achados + ' de ' + d.processos + ' processos encontrados no DataJud' + (d.novidades ? ', ' + d.novidades + ' com novidade' : '') : 'Não consultou: ' + (d.motivo || '')); }
+    catch(err){ toast('Não foi possível consultar: ' + err.message); }
+    finally { this.disabled = false; djStatus(); }
   });
 
   /* ---------- régua de avisos automáticos ---------- */

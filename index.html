@@ -759,7 +759,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
           <small class="integ-s" id="rg-status">Verificando…</small>
         </div>
         <div class="card integ regua" id="av-card">
-          <div><b class="integ-t">Lembrete agora</b><p class="integ-d">Manda um lembrete de uma vez para quem tem audiência no dia escolhido e já foi avisado pelo WhatsApp. Sai um número a cada 2 a 4 minutos, sorteado, das 8h às 18h. Deixe esta página aberta até terminar. Quem já recebeu este lembrete não recebe de novo.</p></div>
+          <div><b class="integ-t">Lembrete agora</b><p class="integ-d">Manda um lembrete para todos os clientes com telefone cadastrado que têm audiência no dia escolhido. Sai um número a cada 2 a 4 minutos, sorteado, das 8h às 18h. Deixe esta página aberta até terminar. Quem já recebeu este lembrete não recebe de novo.</p></div>
           <div class="regua-campos">
             <div><label for="av-dia">Audiência do dia</label><select id="av-dia"></select></div>
             <div><label>Quem recebe</label><div class="integ-s" id="av-qtd" style="margin-top:8px">—</div></div>
@@ -2740,7 +2740,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     var porId = {}; state.rows.forEach(function(r){ porId[r.id] = r; });
     var m = {};
     state.rows.forEach(function(r){
-      if (r.audData !== dia || !r.avisado || r.meioAviso !== 'whatsapp' || r.foraDaRegua) return;
+      if (r.audData !== dia) return;
       var via = !avNum(r.contato) && r.contatoVia ? porId[r.contatoVia] : null;
       var n = avNum(r.contato) || (via ? avNum(via.contato) : ''); if (!n) return;
       (m[n] = m[n] || []).push(r);

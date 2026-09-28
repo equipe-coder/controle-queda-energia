@@ -354,6 +354,21 @@ header.top h1{margin:3px 0 0;font-size:24px;line-height:1.2;font-weight:700;lett
 
 /* ---------- table ---------- */
 .list{overflow:hidden}
+.etapas{padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.etapas-bar{display:flex;height:8px;border-radius:99px;overflow:hidden;background:var(--line)}
+.etapas-bar span{display:block;height:100%}
+.etapas-lista{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px}
+.etapas-lista button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 10px;text-align:left;cursor:pointer}
+.etapas-lista button:hover{border-color:var(--line-2);background:var(--soft)}
+.etapas-lista button[aria-pressed="true"]{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
+.etapas-lista b{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
+.etapas-lista span{font-size:11.5px;color:var(--ink-3);display:flex;align-items:center;gap:5px}
+.etapas-lista i{width:8px;height:8px;border-radius:2px;display:inline-block}
+.hist summary{cursor:pointer;font-weight:600;font-size:13px;color:var(--ink-2)}
+.hist-lista{display:flex;flex-direction:column;gap:8px;margin-top:10px;max-height:260px;overflow:auto}
+.hist-item{font-size:12.5px;border-left:2px solid var(--line-2);padding:2px 0 2px 10px}
+.hist-item time{color:var(--ink-3);font-size:11.5px;display:block}
+.hist-item b{font-weight:600}
 .cad-box{padding:0;overflow:hidden}
 .cad-box .f{max-height:none}
 .cad-box .f-body{max-height:none;overflow:visible}
@@ -573,6 +588,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       </section>
 
       <section id="view-lista" hidden style="display:flex;flex-direction:column;gap:14px">
+        <div class="card etapas" id="cl-etapas"></div>
         <div class="card filterbar"><div class="fb-top">
           <div class="search"><svg class="i"><use href="#i-search"/></svg><input id="cl-q" type="search" placeholder="Buscar por nome, CPF, processo ou telefone"></div>
           <span class="fb-count tnum" id="cl-count"></span>
@@ -799,6 +815,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       <div class="section-lbl">Contestação</div>
       <div class="field full"><label for="f-tese">Tese da contestação</label><input id="f-tese" placeholder="Ex.: aparente reiteração de demandas, devedor contumaz"></div>
       <div class="field full"><label for="f-obs">Observações</label><textarea id="f-obs"></textarea></div>
+      <details class="field full hist" id="f-hist-box" hidden><summary>Histórico de alterações</summary><div id="f-hist" class="hist-lista"></div></details>
     </div>
     <div class="f-foot">
       <button class="btn danger admin-only" type="button" id="f-del" hidden>Excluir</button>
@@ -1458,7 +1475,39 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   }
   function render(){ renderStats(); renderPauta(); renderList(); renderLista(); renderPos(); renderRet(); renderProsp(); renderEquipe(); }
   var clQ = '';
-  function situacaoTexto(r){
+  // stage of each process, derived from what is already recorded (no extra typing)
+  var ETAPAS = [
+    ['cadastrado', 'Cadastrado', '--ink-3'],
+    ['protocolado', 'Aguardando audiência', '--amber'],
+    ['marcada', 'Audiência marcada', '--blue'],
+    ['resultado', 'Aguardando resultado', '--purple'],
+    ['sentenca', 'Sentença', '--ink-2'],
+    ['embargos', 'Embargos', '--red'],
+    ['alvara', 'Alvará', '--blue'],
+    ['pago', 'Pago', '--green']
+  ];
+  function etapa(r){
+    if (r.pagamento === 'pago') return 'pago';
+    if (r.pagamento === 'alvara_expedido' || r.pagamento === 'alvara_enviado') return 'alvara';
+    if (r.embargos === 'opostos') return 'embargos';
+    if (r.resultado && r.resultado !== 'aguardando') return 'sentenca';
+    if (r.audData){ var n = daysUntil(r.audData); return n != null && n >= 0 ? 'marcada' : 'resultado'; }
+    if (r.processo || r.protocolo) return 'protocolado';
+    return 'cadastrado';
+  }
+  function nomeEtapa(k){ var e = ETAPAS.filter(function(x){ return x[0] === k; })[0]; return e ? e[1] : k; }
+  var clEtapa = '';
+  function renderEtapas(){
+    var box = $('cl-etapas'); if (!box) return;
+    var cont = {}; state.rows.forEach(function(r){ var k = etapa(r); cont[k] = (cont[k] || 0) + 1; });
+    var total = state.rows.length || 1;
+    box.innerHTML = '<div class="etapas-bar" aria-hidden="true">' + ETAPAS.map(function(e){ return cont[e[0]] ? '<span style="width:' + (cont[e[0]] / total * 100) + '%;background:var(' + e[2] + ')" title="' + e[1] + ': ' + cont[e[0]] + '"></span>' : ''; }).join('') + '</div>' +
+      '<div class="etapas-lista" role="group" aria-label="Etapa do processo">' + ETAPAS.map(function(e){
+        return '<button type="button" data-etapa="' + e[0] + '" aria-pressed="' + (clEtapa === e[0]) + '"><b>' + (cont[e[0]] || 0) + '</b><span><i style="background:var(' + e[2] + ')"></i>' + e[1] + '</span></button>';
+      }).join('') + '</div>';
+  }
+  function situacaoTexto(r){ return nomeEtapa(etapa(r)); }
+  function situacaoTextoAntigo(r){
     if (r.resultado && RES[r.resultado]) return RES[r.resultado][0];
     var n = daysUntil(r.audData);
     if (r.audData && n >= 0) return 'Audiência marcada';
@@ -1468,12 +1517,14 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   function renderLista(){
     var box = $('cl-list'); if (!box) return;
     var q = clQ.toLowerCase(), qd = digits(clQ);
+    renderEtapas();
     var lista = state.rows.filter(function(r){
-      if (!r.processo) return false;
+      if (clEtapa && etapa(r) !== clEtapa) return false;
+      if (!clEtapa && !r.processo) return false;
       if (!q) return true;
       return String(r.nome || '').toLowerCase().indexOf(q) >= 0 || (qd.length >= 3 && (digits(r.cpf) + ' ' + digits(r.processo) + ' ' + digits(r.contato)).indexOf(qd) >= 0);
     }).sort(function(a, b){ return String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'); });
-    $('cl-count').textContent = lista.length + (lista.length === 1 ? ' cliente' : ' clientes') + ' com processo';
+    $('cl-count').textContent = lista.length + (lista.length === 1 ? ' cliente' : ' clientes') + (clEtapa ? ' em ' + nomeEtapa(clEtapa).toLowerCase() : ' com processo');
     box.innerHTML = '<div class="row head"><div>Cliente</div><div>CPF</div><div>Processo</div><div>Contato</div><div>Audiência</div><div>Situação</div><div></div></div>' +
       (lista.length ? '' : '<div class="empty">Nenhum cliente encontrado.</div>') +
       lista.map(function(r){
@@ -1583,6 +1634,35 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
 
   /* ---------- form ---------- */
   var dlg = $('dlg'), delArmed = false;
+  var CAMPOS_HIST = { nome: 'Nome', cpf: 'CPF', rg: 'RG', endereco: 'Endereço', contato: 'Telefone', contatoVia: 'Avisado via cliente', audData: 'Data da audiência', audHora: 'Hora da audiência', online: 'Online', avisado: 'Aviso', situacao: 'Situação', meioAviso: 'Meio do aviso', avisadoA: 'Quem recebeu', avisadoEm: 'Data do aviso', responsavelId: 'Prospector', processo: 'Processo', protocolo: 'Protocolo', comparecimento: 'Comparecimento', resultado: 'Resultado', concluso: 'Concluso', motivoConcluso: 'Motivo do concluso', embargos: 'Embargos', pagamento: 'Pagamento', obs: 'Observações', pastaUrl: 'Pasta', foraDaRegua: 'Fora da régua', docs: 'Documentos' };
+  function valorHist(k, v){
+    if (v === null || v === undefined || v === '') return '(vazio)';
+    if (typeof v === 'boolean') return v ? 'sim' : 'não';
+    if (k === 'responsavelId') return prospName(v) || v;
+    if (k === 'contatoVia'){ var c = state.rows.filter(function(x){ return x.id === v; })[0]; return c ? c.nome : v; }
+    if (k === 'resultado' && RES[v]) return RES[v][0];
+    if (k === 'pagamento' && PAG[v]) return PAG[v][0];
+    if (k === 'meioAviso' && MEIOS[v]) return MEIOS[v];
+    if (/^\d{4}-\d{2}-\d{2}/.test(String(v)) && String(v).length <= 24) return fmtAny(String(v).slice(0, 10));
+    if (typeof v === 'object') return 'atualizado';
+    return String(v).length > 60 ? String(v).slice(0, 60) + '…' : String(v);
+  }
+  async function carregarHistoricoCliente(r){
+    var box = $('f-hist-box'), lista = $('f-hist');
+    box.hidden = !r; box.open = false; lista.innerHTML = '';
+    if (!r || !window.__qeSB) return;
+    var q = await window.__qeSB.from('clientes_historico').select('acao,por,em,mudancas').eq('cliente_id', r.id).order('em', { ascending: false }).limit(40);
+    if (state.editing !== r.id) return;
+    var itens = q.data || [];
+    if (!itens.length){ lista.innerHTML = '<div class="small">Nenhuma alteração registrada ainda. O histórico começou em 27/09/2026.</div>'; return; }
+    lista.innerHTML = itens.map(function(h){
+      var quando = new Date(h.em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+      var quem = String(h.por || 'sistema').split('@')[0];
+      var o = h.acao === 'criado' ? 'Cadastro criado' : h.acao === 'excluido' ? 'Cadastro excluído' :
+        Object.keys(h.mudancas || {}).map(function(k){ var p = h.mudancas[k]; return '<b>' + esc(CAMPOS_HIST[k] || k) + '</b>: ' + esc(valorHist(k, p[0])) + ' → ' + esc(valorHist(k, p[1])); }).join('<br>');
+      return '<div class="hist-item"><time>' + quando + ' · ' + esc(quem) + '</time>' + o + '</div>';
+    }).join('');
+  }
   function openForm(r, embutido){
     var lugar = embutido ? $('cad-box') : dlg;
     if ($('form').parentElement !== lugar) lugar.appendChild($('form'));
@@ -1625,6 +1705,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     protHint();
     $('f-obs').value = r ? r.obs || '' : '';
     renderFolderField(r);
+    carregarHistoricoCliente(r);
     $('f-del').hidden = !r; delArmed = false; $('f-del').classList.remove('armed'); $('f-del').textContent = 'Excluir';
     cpfHint();
     $('f-cancel').textContent = embutido ? 'Limpar' : 'Cancelar';
@@ -1637,7 +1718,10 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   function cpfHint(){
     var v = $('f-cpf').value, h = $('h-cpf');
     if (digits(v).length < 11){ h.textContent = ''; h.className = 'hint'; return; }
-    var ok = cpfValido(v); h.textContent = ok ? 'CPF válido' : 'CPF inválido: confira os dígitos'; h.className = 'hint ' + (ok ? 'good' : 'bad');
+    var ok = cpfValido(v);
+    var dup = state.rows.filter(function(x){ return x.id !== state.editing && digits(x.cpf) === digits(v); })[0];
+    if (dup){ h.textContent = 'Este CPF já está cadastrado para ' + dup.nome + '. Confira antes de salvar.'; h.className = 'hint bad'; return; }
+    h.textContent = ok ? 'CPF válido' : 'CPF inválido: confira os dígitos'; h.className = 'hint ' + (ok ? 'good' : 'bad');
   }
   $('f-cpf').addEventListener('input', function(e){ e.target.value = maskCPF(e.target.value); cpfHint(); });
   $('f-contato').addEventListener('input', function(e){ e.target.value = maskTel(e.target.value); });
@@ -1822,6 +1906,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   }
   ['list', 'p-list', 'r-list', 'cl-list'].forEach(function(id){ $(id).addEventListener('click', listClick); });
   $('cl-q').addEventListener('input', function(e){ clQ = e.target.value.trim(); renderLista(); });
+  $('cl-etapas').addEventListener('click', function(e){ var b = e.target.closest('[data-etapa]'); if (!b) return; clEtapa = clEtapa === b.dataset.etapa ? '' : b.dataset.etapa; renderLista(); });
 
   /* ---------- registrar aviso: meio + observação ---------- */
   var dlgA = $('dlg-aviso'), avCliente = null;

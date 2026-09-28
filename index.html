@@ -354,6 +354,13 @@ header.top h1{margin:3px 0 0;font-size:24px;line-height:1.2;font-weight:700;lett
 
 /* ---------- table ---------- */
 .list{overflow:hidden}
+.cad-box{padding:0;overflow:hidden}
+.cad-box .f{max-height:none}
+.cad-box .f-body{max-height:none;overflow:visible}
+.cad-box .f-foot{border-radius:0}
+#cl-list .row{grid-template-columns:minmax(0,2.2fr) minmax(0,1fr) minmax(0,1.5fr) minmax(0,1.2fr) minmax(0,1fr) minmax(0,1.3fr) 40px;gap:16px;padding:12px 18px}
+#cl-list .row.head{background:none;border-top:0;border-bottom:1px solid var(--line);font-size:11px;letter-spacing:.06em;color:var(--ink-3)}
+#cl-list .row.head + .row{border-top:0}
 #list .row{grid-template-columns:minmax(0,2.3fr) minmax(0,1.5fr) minmax(0,1.3fr) minmax(0,1.1fr) minmax(0,1.6fr) 72px;gap:18px;padding:14px 20px;border-top:1px solid var(--line)}
 #list .row.head{background:none;border-top:0;border-bottom:1px solid var(--line);font-size:11px;letter-spacing:.06em;padding-block:12px;color:var(--ink-3)}
 #list .row.head + .row{border-top:0}
@@ -550,15 +557,28 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   </header>
 
   <nav class="tabs" role="tablist">
-    <button class="tab" role="tab" id="tab-clientes" aria-selected="true" type="button">Clientes e audiências</button>
-    <button class="tab" role="tab" id="tab-contest" aria-selected="false" type="button">Análise de contestação</button>
+    <button class="tab" role="tab" id="tab-cad" aria-selected="false" type="button">Cadastro</button>
+    <button class="tab" role="tab" id="tab-clientes" aria-selected="true" type="button">Audiências</button>
+    <button class="tab" role="tab" id="tab-lista" aria-selected="false" type="button">Clientes</button>
     <button class="tab" role="tab" id="tab-pos" aria-selected="false" type="button">Pós-audiência</button>
     <button class="tab" role="tab" id="tab-ret" aria-selected="false" type="button">Retorno em 6 meses</button>
-    <button class="tab" role="tab" id="tab-prosp" aria-selected="false" type="button">Prospectadores</button>
     <button class="tab admin-only" role="tab" id="tab-equipe" aria-selected="false" type="button">Configurações</button>
   </nav>
 
   <div class="banner" id="banner" hidden></div>
+
+      <section id="view-cad" hidden style="display:flex;flex-direction:column;gap:14px">
+        <p class="view-desc">Cadastre o cliente aqui. Ao salvar, ele aparece em Audiências e em Clientes. A pasta do Drive pode ser colada no campo Pasta do cliente.</p>
+        <div class="card cad-box" id="cad-box"></div>
+      </section>
+
+      <section id="view-lista" hidden style="display:flex;flex-direction:column;gap:14px">
+        <div class="card filterbar"><div class="fb-top">
+          <div class="search"><svg class="i"><use href="#i-search"/></svg><input id="cl-q" type="search" placeholder="Buscar por nome, CPF, processo ou telefone"></div>
+          <span class="fb-count tnum" id="cl-count"></span>
+        </div></div>
+        <div class="card list" id="cl-list"></div>
+      </section>
 
       <section id="view-clientes" style="display:flex;flex-direction:column;gap:18px">
         <div class="sec-title">Visão geral</div>
@@ -669,13 +689,6 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
         <div class="card list" id="r-list"></div>
       </section>
 
-      <section id="view-prosp" hidden style="display:flex;flex-direction:column;gap:18px">
-        <div class="prosp-head">
-          <p class="view-desc">Quem é responsável por avisar cada cliente. Clientes novos são atribuídos automaticamente pelas palavras do endereço.</p>
-          <button class="btn" id="btn-prosp-novo" type="button"><svg class="i"><use href="#i-plus"/></svg>Novo prospectador</button>
-        </div>
-        <div class="prosp-grid" id="prosp-list"></div>
-      </section>
 
       <section id="view-equipe" hidden style="display:flex;flex-direction:column;gap:18px">
         <div class="sec-title">Equipe</div>
@@ -719,9 +732,13 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
         </div>
         </div>
         <p class="foot-note">Depois de cadastrar, envie o endereço do sistema ao funcionário. No primeiro uso ele clica em <b>Primeiro acesso</b>, informa o mesmo e-mail cadastrado aqui e cria a senha dele. <b>Administrador</b> faz tudo, inclusive excluir clientes e cuidar da equipe. <b>Assistente</b> cadastra e atualiza clientes, avisos e resultados, e gera convites, mas não exclui registros.</p>
-      </section>
-
-      <section id="view-contest" hidden>
+        <div class="sec-title">Prospectadores</div>
+        <div class="prosp-head">
+          <p class="view-desc">Quem é responsável por avisar cada cliente. Clientes novos são atribuídos automaticamente pelas palavras do endereço.</p>
+          <button class="btn" id="btn-prosp-novo" type="button"><svg class="i"><use href="#i-plus"/></svg>Novo prospectador</button>
+        </div>
+        <div class="prosp-grid" id="prosp-list"></div>
+        <div class="sec-title">Análise de contestação</div>
         <div class="card soon">
           <span class="pill muted" style="align-self:flex-start">Próxima etapa</span>
           <h2>Análise de contestação em massa</h2>
@@ -733,6 +750,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
           </ul>
         </div>
       </section>
+
 </div>
 
 <dialog id="dlg">
@@ -1438,7 +1456,38 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       '</div>';
     }).join('');
   }
-  function render(){ renderStats(); renderPauta(); renderList(); renderPos(); renderRet(); renderProsp(); renderEquipe(); }
+  function render(){ renderStats(); renderPauta(); renderList(); renderLista(); renderPos(); renderRet(); renderProsp(); renderEquipe(); }
+  var clQ = '';
+  function situacaoTexto(r){
+    if (r.resultado && RES[r.resultado]) return RES[r.resultado][0];
+    var n = daysUntil(r.audData);
+    if (r.audData && n >= 0) return 'Audiência marcada';
+    if (r.audData) return 'Aguardando resultado';
+    return 'Sem audiência';
+  }
+  function renderLista(){
+    var box = $('cl-list'); if (!box) return;
+    var q = clQ.toLowerCase(), qd = digits(clQ);
+    var lista = state.rows.filter(function(r){
+      if (!r.processo) return false;
+      if (!q) return true;
+      return String(r.nome || '').toLowerCase().indexOf(q) >= 0 || (qd.length >= 3 && (digits(r.cpf) + ' ' + digits(r.processo) + ' ' + digits(r.contato)).indexOf(qd) >= 0);
+    }).sort(function(a, b){ return String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'); });
+    $('cl-count').textContent = lista.length + (lista.length === 1 ? ' cliente' : ' clientes') + ' com processo';
+    box.innerHTML = '<div class="row head"><div>Cliente</div><div>CPF</div><div>Processo</div><div>Contato</div><div>Audiência</div><div>Situação</div><div></div></div>' +
+      (lista.length ? '' : '<div class="empty">Nenhum cliente encontrado.</div>') +
+      lista.map(function(r){
+        return '<div class="row">' +
+          '<div class="c-name"><div class="name"><span>' + esc(r.nome) + '</span>' + pastaIco(r) + '</div><div class="addr">' + esc(r.endereco || 'Endereço não informado') + '</div></div>' +
+          '<div><span class="lbl">CPF</span><div class="val">' + esc(r.cpf || '—') + '</div></div>' +
+          '<div><span class="lbl">Processo</span><div class="val" style="font-size:12.5px">' + esc(r.processo || '—') + '</div></div>' +
+          '<div><span class="lbl">Contato</span>' + telCell(r) + '</div>' +
+          '<div><span class="lbl">Audiência</span><div class="val">' + (r.audData ? fmtShort(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') : '—') + '</div>' + (r.online ? '<div class="mini roxo">Online</div>' : '') + '</div>' +
+          '<div><span class="lbl">Situação</span><div class="val" style="font-size:12.5px">' + esc(situacaoTexto(r)) + '</div></div>' +
+          '<div class="c-act"><button type="button" class="ico-btn" data-act="edit" data-id="' + esc(r.id) + '" title="Editar cadastro" aria-label="Editar ' + esc(r.nome) + '"><svg class="i"><use href="#i-pencil"/></svg></button></div>' +
+        '</div>';
+      }).join('');
+  }
   function isAdmin(){ return !!(state.me && state.me.funcao === 'admin'); }
 
   /* ---------- equipe ---------- */
@@ -1534,7 +1583,9 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
 
   /* ---------- form ---------- */
   var dlg = $('dlg'), delArmed = false;
-  function openForm(r){
+  function openForm(r, embutido){
+    var lugar = embutido ? $('cad-box') : dlg;
+    if ($('form').parentElement !== lugar) lugar.appendChild($('form'));
     state.editing = r ? r.id : null;
     $('f-title').textContent = r ? 'Editar cliente' : 'Novo cliente';
     $('f-nome').value = r ? r.nome || '' : '';
@@ -1576,7 +1627,8 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     renderFolderField(r);
     $('f-del').hidden = !r; delArmed = false; $('f-del').classList.remove('armed'); $('f-del').textContent = 'Excluir';
     cpfHint();
-    dlg.showModal();
+    $('f-cancel').textContent = embutido ? 'Limpar' : 'Cancelar';
+    if (!embutido) dlg.showModal();
     $('f-nome').focus();
   }
   function protHint(){ var v = $('f-protocolo').value, h = $('h-prot');
@@ -1589,7 +1641,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   }
   $('f-cpf').addEventListener('input', function(e){ e.target.value = maskCPF(e.target.value); cpfHint(); });
   $('f-contato').addEventListener('input', function(e){ e.target.value = maskTel(e.target.value); });
-  $('f-cancel').addEventListener('click', function(){ dlg.close(); });
+  $('f-cancel').addEventListener('click', function(){ if ($('form').parentElement === $('cad-box')) openForm(null, true); else dlg.close(); });
   $('f-del').addEventListener('click', async function(){
     if (!delArmed){ delArmed = true; this.classList.add('armed'); this.textContent = 'Confirmar exclusão'; return; }
     try { await deleteRow(state.editing); dlg.close(); toast('Cliente excluído'); } catch(e){ toast(errMsg(e)); }
@@ -1622,15 +1674,17 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     $('f-save').disabled = true;
     try {
       var isNew = !state.editing;
-      var newId = await saveRow(state.editing, data); dlg.close();
-      toast(isNew ? 'Cliente cadastrado' : 'Alterações salvas');
+      var noCadastro = $('form').parentElement === $('cad-box');
+      var newId = await saveRow(state.editing, data); if (dlg.open) dlg.close();
+      toast(isNew ? 'Cliente cadastrado: ' + nome : 'Alterações salvas');
+      if (noCadastro) openForm(null, true);
     }
     catch(err){ toast(errMsg(err)); }
     finally { $('f-save').disabled = false; }
   });
 
   /* ---------- events ---------- */
-  $('btn-novo').addEventListener('click', function(){ openForm(null); });
+  $('btn-novo').addEventListener('click', function(){ showTab('n'); });
   $('f-via-tirar').addEventListener('click', function(){ $('f-via-box').dataset.tirar = '1'; $('f-via-nome').textContent = 'Vínculo será removido ao salvar'; });
   $('q').addEventListener('input', function(e){ state.q = e.target.value.trim(); state.limit = 100; renderList(); });
   $('fb-rapido').addEventListener('click', function(e){
@@ -1713,26 +1767,26 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       async function ligar(c){
         if (feito) return; feito = true;
         try { await patchRow(r.id, Object.assign({ contatoVia: c.id }, carimbo())); toast(r.nome + ' será avisado(a) via ' + c.nome); }
-        catch(err){ toast(errMsg(err)); renderList(); }
+        catch(err){ toast(errMsg(err)); render(); }
       }
       async function salvarTel(){
         if (feito) return;
         var v = inp.value.trim();
-        if (!v || v === r.contato){ feito = true; renderList(); return; }
+        if (!v || v === r.contato){ feito = true; render(); return; }
         if (achados.length && !/^[\d\s()+-]+$/.test(v)){ ligar(achados[marcado]); return; }
         if (digits(v).length < 10){ toast('Digite o telefone com DDD, ou o nome de um cliente e escolha na lista'); return; }
         feito = true;
         try { await patchRow(r.id, Object.assign({ contato: v, contatoVia: null }, carimbo())); toast('Telefone salvo: ' + (r.nome || '')); }
-        catch(err){ toast(errMsg(err)); renderList(); }
+        catch(err){ toast(errMsg(err)); render(); }
       }
       lista.addEventListener('mousedown', function(ev){ var x = ev.target.closest('[data-i]'); if (x){ ev.preventDefault(); ligar(achados[+x.dataset.i]); } });
       inp.addEventListener('keydown', function(ev){
         if (ev.key === 'ArrowDown' && achados.length){ ev.preventDefault(); marcado = (marcado + 1) % achados.length; mostrar(); }
         else if (ev.key === 'ArrowUp' && achados.length){ ev.preventDefault(); marcado = (marcado - 1 + achados.length) % achados.length; mostrar(); }
         else if (ev.key === 'Enter'){ ev.preventDefault(); salvarTel(); }
-        else if (ev.key === 'Escape'){ feito = true; renderList(); }
+        else if (ev.key === 'Escape'){ feito = true; render(); }
       });
-      inp.addEventListener('blur', function(){ setTimeout(function(){ if (!feito && (!inp.value.trim() || inp.value.trim() === r.contato)){ feito = true; renderList(); } else if (!feito) lista.hidden = true; }, 150); });
+      inp.addEventListener('blur', function(){ setTimeout(function(){ if (!feito && (!inp.value.trim() || inp.value.trim() === r.contato)){ feito = true; render(); } else if (!feito) lista.hidden = true; }, 150); });
       inp.select();
       return;
     }
@@ -1766,7 +1820,8 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       catch(err){ toast(errMsg(err)); }
     }
   }
-  ['list', 'p-list', 'r-list'].forEach(function(id){ $(id).addEventListener('click', listClick); });
+  ['list', 'p-list', 'r-list', 'cl-list'].forEach(function(id){ $(id).addEventListener('click', listClick); });
+  $('cl-q').addEventListener('input', function(e){ clQ = e.target.value.trim(); renderLista(); });
 
   /* ---------- registrar aviso: meio + observação ---------- */
   var dlgA = $('dlg-aviso'), avCliente = null;
@@ -1794,11 +1849,12 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     } catch(err){ toast(errMsg(err)); }
     finally { $('av-save').disabled = false; }
   });
-  var VIEWS = { c: ['tab-clientes', 'view-clientes'], p: ['tab-pos', 'view-pos'], r: ['tab-ret', 'view-ret'], g: ['tab-prosp', 'view-prosp'], e: ['tab-equipe', 'view-equipe'], x: ['tab-contest', 'view-contest'] };
+  var VIEWS = { n: ['tab-cad', 'view-cad'], c: ['tab-clientes', 'view-clientes'], l: ['tab-lista', 'view-lista'], p: ['tab-pos', 'view-pos'], r: ['tab-ret', 'view-ret'], e: ['tab-equipe', 'view-equipe'] };
   function showTab(which){
     state.view = which;
     if (which === 'e' && !isAdmin()) which = 'c';
-    $('btn-novo').hidden = which === 'x' || which === 'g' || which === 'e';
+    $('btn-novo').hidden = which === 'n' || which === 'e';
+    if (which === 'n') openForm(null, true);
     Object.keys(VIEWS).forEach(function(k){ $(VIEWS[k][0]).setAttribute('aria-selected', k === which ? 'true' : 'false'); $(VIEWS[k][1]).hidden = k !== which; });
     try { sessionStorage.setItem('qe-view', which); } catch(e){}
   }

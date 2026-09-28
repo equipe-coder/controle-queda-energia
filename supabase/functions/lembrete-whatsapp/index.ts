@@ -136,9 +136,6 @@ const hojeMao = (t = Date.now()) => new Date(t + MAO).toISOString().slice(0, 10)
 const horaMao = (t = Date.now()) => new Date(t + MAO).getUTCHours() + new Date(t + MAO).getUTCMinutes() / 60;
 function somaDias(iso: string, n: number) { const d = new Date(iso + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
 const diaSemana = (iso: string) => new Date(iso + 'T12:00:00Z').getUTCDay();
-function antesUtil(iso: string) { const w = diaSemana(iso); return w === 6 ? somaDias(iso, -1) : w === 0 ? somaDias(iso, -2) : iso; }
-function depoisUtil(iso: string) { const w = diaSemana(iso); return w === 6 ? somaDias(iso, 2) : w === 0 ? somaDias(iso, 1) : iso; }
-function proximoUtil(iso: string) { return depoisUtil(somaDias(iso, 1)); }
 const diasEntre = (a: string, b: string) => Math.round((new Date(b + 'T12:00:00Z').getTime() - new Date(a + 'T12:00:00Z').getTime()) / 86400000);
 
 /* ---------------- textos ---------------- */
@@ -146,14 +143,16 @@ const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julh
 const DIAS = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
 const LOCAL = '📍 *Novo Fórum de Justiça da Comarca de Alvarães*';
 export const MODELOS: Record<string, string> = {
+  h3: 'Olá, {nome}! Aqui é do escritório do Dr. Thiago Litaiff.\n\nLembrete da sua audiência contra a Âmbar Energia:\n{audiencia}\n' + LOCAL + '\n\nÉ obrigatório levar documento com foto (RG ou CNH). Se faltar, o processo pode ser encerrado.\n\nPor favor, responda *OK* para confirmar que vai comparecer.',
   designacao: 'Olá, {nome}! Aqui é do escritório do Dr. Thiago Litaiff.\n\nSua audiência contra a Âmbar Energia foi marcada:\n{audiencia}\n' + LOCAL + '\n\nÉ obrigatório levar documento com foto (RG ou CNH). Vamos lembrar você de novo perto da data.\n\nPor favor, responda *OK* para confirmar que recebeu.',
   d10: 'Olá, {nome}! Aqui é do escritório do Dr. Thiago Litaiff.\n\nPassando para lembrar da sua audiência contra a Âmbar Energia:\n{audiencia}\n' + LOCAL + '\n\nÉ obrigatório levar documento com foto (RG ou CNH). Qualquer dúvida, é só responder esta mensagem.',
   h10: 'Olá, {nome}! Aqui é do escritório do Dr. Thiago Litaiff.\n\nFaltam {dias} dias para a sua audiência contra a Âmbar Energia:\n{audiencia}\n' + LOCAL + '\n\nÉ obrigatório levar documento com foto (RG ou CNH). Se faltar, o processo pode ser encerrado.\n\nPor favor, responda *OK* para confirmar que recebeu.',
   h5: 'Olá, {nome}! Aqui é do escritório do Dr. Thiago Litaiff.\n\nFaltam só {dias} dias para a sua audiência contra a Âmbar Energia:\n{audiencia}\n' + LOCAL + '\n\nNão esqueça o documento com foto (RG ou CNH). Se faltar, o processo pode ser encerrado.\n\nPor favor, responda *OK* para confirmar.',
-  h1: 'Olá, {nome}! Sua audiência contra a Âmbar Energia é {quando}:\n{audiencia}\n' + LOCAL + '\n\nChegue com antecedência e leve documento com foto (RG ou CNH). Qualquer dúvida, é só responder esta mensagem.',
+  h1: 'Olá, {nome}! Sua audiência contra a Âmbar Energia é *{quando}*:\n{audiencia}\n' + LOCAL + '\n\nChegue no horário e não esqueça o documento com foto (RG ou CNH). Qualquer dúvida, é só responder esta mensagem.',
 };
-export const ETAPAS = ['designacao', 'd10', 'h10', 'h5', 'h1'];
-const URGENCIA: Record<string, number> = { h1: 0, h5: 1, h10: 2, designacao: 3, d10: 4 };
+// cadência: 3 dias antes e véspera, em qualquer dia da semana
+export const ETAPAS = ['h3', 'h1'];
+const URGENCIA: Record<string, number> = { h1: 0, h3: 1 };
 function dataLonga(iso: string) { const p = iso.split('-'); return p[2] + ' de ' + MESES[+p[1] - 1] + ' de ' + p[0] + ' (' + DIAS[diaSemana(iso)] + ')'; }
 function horaConvite(h: string) { if (!h) return 'horário a confirmar'; const [a, b] = h.split(':').map(Number); let m = a * 60 + (b || 0) - 30; if (m < 0) m += 1440; const hh = Math.floor(m / 60), mm = m % 60; return hh + 'h' + (mm ? String(mm).padStart(2, '0') : ''); }
 const primeiro = (n: string) => String(n || '').trim().split(/\s+/)[0] || '';
@@ -207,24 +206,16 @@ function grupos(clientes: Cli[], hoje: string): Grupo[] {
   }
   return [...m.values()];
 }
-// datas de cada etapa; cada uma vale do seu dia até o próximo dia útil (folga para o limite diário), sem passar da próxima etapa
+// datas de cada etapa; cada uma vale do seu dia até o dia seguinte (folga para o limite diário), sem passar da próxima etapa
 function passos(g: Grupo, inicio: string): Passo[] {
-  const lista: { etapa: string; data: string }[] = [];
-  const h10 = antesUtil(somaDias(g.aud, -10));
-  if (g.marcada) {
-    const d0 = depoisUtil(g.marcada.slice(0, 10));
-    lista.push({ etapa: 'designacao', data: d0 });
-    const d10 = depoisUtil(somaDias(g.marcada.slice(0, 10), 10));
-    if (diasEntre(d10, h10) >= 3) lista.push({ etapa: 'd10', data: d10 });
-  }
-  lista.push({ etapa: 'h10', data: h10 }, { etapa: 'h5', data: antesUtil(somaDias(g.aud, -5)) }, { etapa: 'h1', data: antesUtil(somaDias(g.aud, -1)) });
-  const minimo = g.marcada ? depoisUtil(g.marcada.slice(0, 10)) : '';
-  let ok = lista.filter((p) => p.data >= inicio && p.data < g.aud && (!minimo || p.data >= minimo) && !(g.marcada && p.etapa !== 'designacao' && p.data === minimo));
+  const lista = [{ etapa: 'h3', data: somaDias(g.aud, -3) }, { etapa: 'h1', data: somaDias(g.aud, -1) }];
+  const minimo = g.marcada ? g.marcada.slice(0, 10) : '';
+  let ok = lista.filter((p) => p.data >= inicio && p.data < g.aud && (!minimo || p.data >= minimo));
   // mesma data para duas etapas: fica a mais próxima da audiência
   ok = ok.filter((p, i) => !ok.some((q, j) => j > i && q.data === p.data));
   return ok.map((p, i) => {
     const prox = ok[i + 1];
-    let ate = proximoUtil(p.data);
+    let ate = somaDias(p.data, 1);
     if (prox && ate >= prox.data) ate = somaDias(prox.data, -1);
     if (ate >= g.aud) ate = somaDias(g.aud, -1);
     return { etapa: p.etapa, data: p.data, ate };
@@ -255,8 +246,8 @@ function pendentesNoDia(gs: Grupo[], feitos: Set<string>, dia: string, inicio: s
 async function rodarRegua(): Promise<any> {
   const cfg = await lerConfig();
   if (!cfg.ativo) return { rodou: false, motivo: 'régua desligada' };
-  const agora = Date.now(), hoje = hojeMao(agora), w = diaSemana(hoje), h = horaMao(agora);
-  if (w === 0 || w === 6 || h < 8 || h >= 18) return { rodou: false, motivo: 'fora do horário comercial' };
+  const agora = Date.now(), hoje = hojeMao(agora), h = horaMao(agora);
+  if (h < 8 || h >= 18) return { rodou: false, motivo: 'fora do horário (8h às 18h)' };
   const key = await chaveLiderHub(); if (!key || !cfg.conexao) return { rodou: false, motivo: 'falta chave ou número do LiderHub' };
   const inicioDia = new Date(hoje + 'T00:00:00-04:00').toISOString();
   const { count } = await adm.from('avisos_log').select('id', { count: 'exact', head: true }).eq('status', 'enviado').neq('etapa', 'teste').gte('criado_em', inicioDia);
@@ -283,12 +274,12 @@ async function rodarRegua(): Promise<any> {
   return { rodou: true, fila: fila.length, cota, enviados };
 }
 
-// prévia dos próximos dias úteis, simulando o limite diário
+// prévia dos próximos dias, simulando o limite diário
 async function previa() {
   const cfg = await lerConfig(), hoje = hojeMao(), inicio = cfg.inicio || hoje;
   const gs = grupos(await carregarClientes(), hoje), feitos = await jaFeitos(), dias = [];
-  let dia = depoisUtil(hoje);
-  for (let i = 0; i < 12; i++, dia = proximoUtil(dia)) {
+  let dia = hoje;
+  for (let i = 0; i < 14; i++, dia = somaDias(dia, 1)) {
     const fila = pendentesNoDia(gs, feitos, dia, inicio), vai = fila.slice(0, +cfg.porDia || 70);
     const porEtapa: Record<string, number> = {};
     vai.forEach((x) => { porEtapa[x.p.etapa] = (porEtapa[x.p.etapa] || 0) + 1; feitos.add(x.g.numero + '|' + x.p.etapa + '|' + x.g.aud); });
@@ -370,7 +361,7 @@ Deno.serve(async (req) => {
     // teste: manda a etapa escolhida, com os dados do primeiro cliente da régua, para o número informado
     if (body.acao === 'regua-teste') {
       const cfg = await lerConfig(), hoje = hojeMao();
-      const etapa = ETAPAS.includes(body.etapa) ? body.etapa : 'h5';
+      const etapa = ETAPAS.includes(body.etapa) ? body.etapa : 'h3';
       const todos = await carregarClientes();
       const gs = grupos(todos, hoje).sort((a, b) => a.aud.localeCompare(b.aud));
       if (!gs.length) return json({ erro: 'Nenhum cliente com audiência futura e telefone.' }, 400);

@@ -737,7 +737,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
           </form>
         </div>
         <div class="card integ regua">
-          <div><b class="integ-t">Régua de avisos automáticos</b><p class="integ-d">Quando a audiência é marcada, o sistema avisa o cliente pelo WhatsApp do Pós-venda, sozinho, em cada etapa. Envia poucos por vez, só em dias úteis das 8h às 18h (Manaus), com limite por dia.</p></div>
+          <div><b class="integ-t">Régua de avisos automáticos</b><p class="integ-d">O sistema lembra o cliente da audiência pelo WhatsApp do Pós-venda, sozinho: 3 dias antes e na véspera. Envia poucos por vez, todos os dias das 8h às 18h (Manaus), com limite por dia.</p></div>
           <div class="regua-etapas">
             <span class="pill blue">Dia da designação</span><span class="pill blue">10 dias depois</span><span class="pill blue">10 dias antes</span><span class="pill blue">5 dias antes</span><span class="pill blue">Véspera</span>
           </div>
@@ -753,7 +753,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
           </div>
           <div id="rg-previa-box" hidden></div>
           <div class="regua-campos">
-            <div><label for="rg-teste-etapa">Testar etapa</label><select id="rg-teste-etapa"><option value="designacao">Dia da designação</option><option value="d10">10 dias depois</option><option value="h10">10 dias antes</option><option value="h5" selected>5 dias antes</option><option value="h1">Véspera</option></select></div>
+            <div><label for="rg-teste-etapa">Testar etapa</label><select id="rg-teste-etapa"><option value="h3" selected>3 dias antes</option><option value="h1">Véspera</option></select></div>
             <div><label for="rg-teste-num">Seu WhatsApp</label><div class="integ-row"><input id="rg-teste-num" inputmode="tel" placeholder="(97) 00000-0000" class="tnum" style="flex:1 1 140px"><button type="button" class="btn" id="rg-teste">Enviar teste</button></div></div>
           </div>
           <small class="integ-s" id="rg-status">Verificando…</small>
@@ -1101,7 +1101,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     var n = daysUntil(r.audData), s = sit(r);
     var pend = !r.avisado && r.audData && n >= 0;
     var btn = function(cls, txt, dica){ return '<button type="button" class="st ' + cls + '" data-act="aviso" data-id="' + esc(r.id) + '" title="' + dica + '">' + (cls.indexOf('acao') < 0 ? '<i></i>' : '') + txt + '</button>'; };
-    var ETQ = { designacao: 'designação', d10: '10 dias depois', h10: '10 dias antes', h5: '5 dias antes', h1: 'véspera' };
+    var ETQ = { h3: '3 dias antes', h1: 'véspera', designacao: 'designação', d10: '10 dias depois', h10: '10 dias antes', h5: '5 dias antes' };
     var linha1, linha2 = '';
     if (r.avisado){
       linha1 = btn('ok', 'Avisado', 'Clique para desmarcar');
@@ -2720,7 +2720,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
 
   /* ---------- régua de avisos automáticos ---------- */
   var RG = { cfg: null, modelos: null };
-  var RG_NOMES = { designacao: 'Dia da designação', d10: '10 dias depois da designação', h10: '10 dias antes da audiência', h5: '5 dias antes da audiência', h1: 'Véspera da audiência' };
+  var RG_NOMES = { h3: '3 dias antes da audiência', h1: 'Véspera da audiência' };
   function rgFn(b){ return SB.functions.invoke('lembrete-whatsapp', { body: b }).then(function(r){ if (r.error){ return (r.error.context && r.error.context.json ? r.error.context.json().catch(function(){ return {}; }) : Promise.resolve({})).then(function(j){ throw new Error((j && j.erro) || r.error.message); }); } return r.data; }); }
   async function rgCarregar(){
     try {
@@ -2744,7 +2744,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   }
   function rgCampos(){
     var modelos = {};
-    ['designacao', 'd10', 'h10', 'h5', 'h1'].forEach(function(e){ var t = $('rg-t-' + e); if (t && RG.modelos && t.value.trim() && t.value !== RG.modelos[e]) modelos[e] = t.value; });
+    ['h3', 'h1'].forEach(function(e){ var t = $('rg-t-' + e); if (t && RG.modelos && t.value.trim() && t.value !== RG.modelos[e]) modelos[e] = t.value; });
     return { porDia: Math.max(10, Math.min(200, +$('rg-dia').value || 70)), conexao: $('rg-conexao').value || RG.cfg.conexao || '', modelos: modelos };
   }
   async function rgGravar(extra){
@@ -2763,7 +2763,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
         if (!$('rg-conexao').value){ toast('Escolha o número que envia'); return; }
         await rgFn({ acao: 'regua-preparar' });
         await rgGravar({ ativo: true, inicio: c.inicio || iso(new Date()) });
-        toast('Régua ligada. Os avisos saem sozinhos em dias úteis, das 8h às 18h.');
+        toast('Régua ligada. Os avisos saem sozinhos todos os dias, das 8h às 18h.');
       } else { await rgGravar({ ativo: false }); toast('Régua desligada'); }
     } catch(e){ toast('Não foi possível: ' + e.message); rgStatus(); }
     finally { this.disabled = false; }
@@ -2774,7 +2774,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       await rgGravar();
       var p = await rgFn({ acao: 'regua-previa' });
       if (!p.dias.length){ box.textContent = 'Nenhum aviso previsto para os próximos dias.'; return; }
-      var ETQ2 = { designacao: 'Designação', d10: '10 dias depois', h10: '10 antes', h5: '5 antes', h1: 'Véspera' };
+      var ETQ2 = { h3: '3 dias antes', h1: 'Véspera', designacao: 'Designação', d10: '10 dias depois', h10: '10 antes', h5: '5 antes' };
       box.innerHTML = '<table class="regua-prev"><thead><tr><th>Dia</th><th>Mensagens</th><th>Etapas</th></tr></thead><tbody>' + p.dias.map(function(d){
         var dd = d.dia.split('-'); var w = DOW[new Date(+dd[0], +dd[1] - 1, +dd[2]).getDay()];
         return '<tr><td>' + w + ' ' + dd[2] + '/' + dd[1] + '</td><td class="n">' + d.total + (d.sobra ? ' <span class="pill warn">+' + d.sobra + ' passam para o dia seguinte</span>' : '') + '</td><td>' + Object.keys(d.porEtapa).map(function(k){ return ETQ2[k] + ': ' + d.porEtapa[k]; }).join(' · ') + '</td></tr>';

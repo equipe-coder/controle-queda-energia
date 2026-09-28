@@ -1499,7 +1499,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       '</div>';
     }).join('');
   }
-  function render(){ renderStats(); renderPauta(); renderList(); renderLista(); renderPos(); renderRet(); renderProsp(); renderEquipe(); }
+  function render(){ renderStats(); renderPauta(); renderList(); renderLista(); renderPos(); renderRet(); renderProsp(); renderEquipe(); if (typeof AV !== 'undefined' && AV && !AV.rodando) avMontar(); }
   var clQ = '';
   // stage of each process, derived from what is already recorded (no extra typing)
   var ETAPAS = [

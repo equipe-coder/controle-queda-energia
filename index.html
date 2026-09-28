@@ -2127,15 +2127,15 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     function label(txt, x, y){ doc.setFont('helvetica', 'bold'); doc.setFontSize(6.6); ink(C.teal); doc.setCharSpace(0.4); doc.text(txt, x, y); doc.setCharSpace(0); }
 
     // one title per hearing session (date + time) at the top of its first page; the invitations follow
-    var TIT = 15, porSessao = {}, sessao = null, slot = 0, topo = 0;
+    var TIT = 20, porSessao = {}, sessao = null, slot = 0, topo = 0;
     lista.forEach(function(r){ var c = r.audData + '|' + (r.audHora || ''); porSessao[c] = (porSessao[c] || 0) + 1; });
     function tituloSessao(r){
       var total = porSessao[r.audData + '|' + (r.audHora || '')];
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(13); ink(C.teal); doc.setCharSpace(0.2);
-      doc.text('AUDIÊNCIA · ' + fmtDate(r.audData) + ' · ' + pdfDiaSemana(r.audData) + (r.audHora ? ' · ' + r.audHora.slice(0, 5) : ''), 8, 9.5);
-      doc.setCharSpace(0); doc.setFont('helvetica', 'normal'); doc.setFontSize(9); ink(C.sub);
-      doc.text(total + (total === 1 ? ' convite' : ' convites'), 202, 9.5, { align: 'right' });
-      draw(C.teal); doc.setLineWidth(0.5); doc.line(8, 12, 202, 12);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(0, 0, 0); doc.setCharSpace(0.2);
+      doc.text('AUDIÊNCIA · ' + fmtDate(r.audData) + ' · ' + pdfDiaSemana(r.audData) + (r.audHora ? ' · ' + r.audHora.slice(0, 5) : ''), 8, 12.5);
+      doc.setCharSpace(0); doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(0, 0, 0);
+      doc.text(total + (total === 1 ? ' convite' : ' convites'), 202, 12.5, { align: 'right' });
+      doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.6); doc.line(8, 16, 202, 16);
     }
     lista.forEach(function(r, i){
       var chave = r.audData + '|' + (r.audHora || '');

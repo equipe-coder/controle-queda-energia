@@ -127,7 +127,7 @@ async function enviarTexto(key: string, conexao: string, numero: string, nome: s
   }
   if (!contato) return { ok: false, semWhats, erro };
   const m = await lh(key, 'POST', '/v1/send/message', { contact: contato, content: texto, messageType: 'conversation' });
-  return m.ok ? { ok: true, numero: usado } : { ok: false, semWhats: false, numero: usado, erro: 'Envio recusado (' + m.status + '): ' + (m.dados?.message || '') };
+  return m.ok ? { ok: true, numero: usado, contato, mensagem: m.dados?.id || m.dados?.messageId || null, resposta: m.dados } : { ok: false, semWhats: false, numero: usado, erro: 'Envio recusado (' + m.status + '): ' + (m.dados?.message || '') };
 }
 
 /* ---------------- datas (Manaus, UTC-4 o ano todo) ---------------- */
@@ -340,6 +340,23 @@ Deno.serve(async (req) => {
         if (!r.dados?.pagination?.hasNextPage) break;
       }
       return json({ contatos: out });
+    }
+
+    // diagnóstico: últimas mensagens da conversa com o número, com o status de entrega no LiderHub
+    if (body.acao === 'mensagens') {
+      const conexao = String(body.conexao || (await lerConfig()).conexao || '');
+      const out: any[] = [];
+      for (const n of variantes(String(body.numero || ''))) {
+        const c = await lh(key, 'POST', '/v1/contacts', { connection: conexao, number: n });
+        const item: any = { numero: n, existe: !!c.dados?.exist, contato: c.dados?.id || null };
+        if (c.dados?.id) {
+          const m = await lh(key, 'GET', '/v1/message?limit=5&contact=' + c.dados.id);
+          item.mensagens = (m.dados?.messages || []).map((x: any) => ({ id: x.id, texto: String(x.content || '').slice(0, 40), saida: x.outbound, status: x.deliveryStatus, em: x.sentAt || x.createdAt, erro: x.errorDetails || null }));
+          if (!m.ok) item.erro = m.status + ' ' + (m.dados?.message || '');
+        }
+        out.push(item);
+      }
+      return json({ conexao, resultado: out });
     }
 
     // teste: manda a etapa escolhida, com os dados do primeiro cliente da régua, para o número informado

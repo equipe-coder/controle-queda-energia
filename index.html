@@ -246,7 +246,14 @@ header.top h1{margin:4px 0 0;font-size:32px;line-height:1.1;font-weight:800;lett
 .stat{padding:14px 14px 0;display:flex;flex-direction:column;min-height:134px;overflow:hidden}
 .stat-h{display:flex;align-items:center;gap:8px;color:var(--ink-2);font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
 .stat-h svg.i{width:17px;height:17px}
-.help{display:inline-grid;place-items:center;width:15px;height:15px;border-radius:50%;border:1.4px solid var(--ink-3);color:var(--ink-3);font-size:9.5px;font-weight:700;cursor:help;text-transform:none;letter-spacing:0}
+.help{display:inline-grid;place-items:center;width:15px;height:15px;border-radius:50%;border:1.4px solid var(--ink-3);color:var(--ink-3);font-size:9.5px;font-weight:700;cursor:pointer;text-transform:none;letter-spacing:0;background:none;padding:0;font-family:inherit}
+.help:hover,.help[aria-expanded="true"]{border-color:var(--ink);color:var(--ink)}
+.help-pop{position:fixed;z-index:60;max-width:300px;background:var(--panel);color:var(--ink);border:1px solid var(--line-2);border-radius:10px;padding:12px 14px;box-shadow:0 10px 30px rgba(0,0,0,.25);font-size:12.5px;line-height:1.5;text-transform:none;letter-spacing:0;font-weight:400}
+.help-pop p{margin:0 0 6px}
+.help-pop ul{margin:4px 0 0;padding-left:16px}
+.help-pop li{margin:2px 0}
+.help-pop b{font-weight:600}
+.help-pop .btn{margin-top:10px;width:100%;justify-content:center}
 .stat-v{font-size:26px;font-weight:800;letter-spacing:-.02em;margin-top:6px;line-height:1.1}
 .stat-c{font-size:12.5px;color:var(--ink-2);margin-top:3px}
 .stat-viz{margin-top:auto;padding-top:10px;margin-inline:-14px}
@@ -596,25 +603,25 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
         <div class="sec-title">Visão geral</div>
         <div class="stats">
           <div class="card stat">
-            <div class="stat-h"><svg class="i"><use href="#i-users"/></svg>Clientes<span class="help" title="Total de clientes cadastrados no produto Queda de Energia.">?</span></div>
+            <div class="stat-h"><svg class="i"><use href="#i-users"/></svg>Clientes<span class="help" data-p-help="semtel" data-p-rot="Ver quem está sem telefone" title="Todos os clientes cadastrados. &quot;Com nº de processo&quot; são os que já foram protocolados.|Com telefone: tem número próprio cadastrado.|Via outro cliente: é avisado pelo número de outro cliente (parente ou vizinho).|Prospectador: o contato é feito pelo prospectador da comunidade.|Sem telefone: nenhum meio de contato cadastrado.">?</span></div>
             <div class="stat-v tnum" id="s-total">0</div>
             <div class="stat-c" id="s-total-c">&nbsp;</div>
             <div class="stat-viz" id="v-total"></div>
           </div>
           <div class="card stat">
-            <div class="stat-h"><svg class="i"><use href="#i-cal"/></svg>Audiências marcadas<span class="help" title="Audiências de hoje em diante. O gráfico mostra quantas há por dia.">?</span></div>
+            <div class="stat-h"><svg class="i"><use href="#i-cal"/></svg>Audiências marcadas<span class="help" data-p-help="todos" data-p-rot="Ver a pauta completa" title="Audiências de hoje em diante, com o período da pauta e quantos dias faltam para a próxima.|Com prospectador: clientes cujo aviso passa pelo prospectador da comunidade.|Sem prospectador: avisados diretamente pelo escritório.">?</span></div>
             <div class="stat-v tnum" id="s-aud">0</div>
             <div class="stat-c" id="s-aud-c">&nbsp;</div>
             <div class="stat-viz" id="v-aud"></div>
           </div>
           <div class="card stat">
-            <div class="stat-h"><svg class="i"><use href="#i-check"/></svg>Avisados<span class="help" title="Clientes com audiência marcada que já foram avisados.">?</span></div>
+            <div class="stat-h"><svg class="i"><use href="#i-check"/></svg>Avisados<span class="help" data-p-help="avisar" data-p-rot="Ver quem falta avisar" title="Clientes com audiência marcada que já foram avisados, e a porcentagem sobre o total.|WhatsApp: avisado por mensagem.|Convite: recebeu o convite impresso.|Prospectador: avisado pelo prospectador.|Faltam: ainda não avisados.">?</span></div>
             <div class="stat-v tnum" id="s-avis">0</div>
             <div class="stat-c" id="s-avis-c">&nbsp;</div>
             <div class="stat-viz" id="v-avis"></div>
           </div>
           <div class="card stat">
-            <div class="stat-h"><svg class="i"><use href="#i-bellx"/></svg>Pendentes de aviso<span class="help" title="Clientes com audiência marcada que ainda não foram avisados, separados por quem é o responsável pelo aviso.">?</span></div>
+            <div class="stat-h"><svg class="i"><use href="#i-bellx"/></svg>Pendentes de aviso<span class="help" data-p-help="semcontato" data-p-rot="Ver quem está sem contato" title="Clientes com audiência marcada que ainda não foram avisados.|Sem contato: tentamos e não conseguimos falar; precisam do convite impresso.|Com prospectador: o aviso depende do prospectador da comunidade.">?</span></div>
             <div class="stat-v tnum" id="s-pend">0</div>
             <div class="stat-c" id="s-pend-c">&nbsp;</div>
             <div class="stat-viz" id="v-pend"></div>
@@ -1779,6 +1786,48 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     catch(err){ toast(errMsg(err)); }
     finally { $('f-save').disabled = false; }
   });
+
+  /* ---------- "?" explanations: open on click, with a shortcut to the list ---------- */
+  var helpPop = null, helpDe = null;
+  function fecharAjuda(){ if (helpPop){ helpPop.remove(); helpPop = null; } if (helpDe){ helpDe.setAttribute('aria-expanded', 'false'); helpDe = null; } }
+  function prepararAjuda(el){
+    if (el.dataset.help === undefined){ el.dataset.help = el.getAttribute('title') || ''; el.removeAttribute('title'); }
+    if (!el.hasAttribute('tabindex')){ el.setAttribute('tabindex', '0'); el.setAttribute('role', 'button'); el.setAttribute('aria-label', 'O que é isto?'); el.setAttribute('aria-expanded', 'false'); }
+  }
+  function abrirAjuda(el){
+    fecharAjuda(); prepararAjuda(el);
+    var partes = el.dataset.help.split('|'), t = partes.shift();
+    var html = '<p>' + esc(t) + '</p>';
+    if (partes.length) html += '<ul>' + partes.map(function(x){ var i = x.indexOf(':'); return '<li>' + (i > 0 ? '<b>' + esc(x.slice(0, i)) + '</b>' + esc(x.slice(i)) : esc(x)) + '</li>'; }).join('') + '</ul>';
+    if (el.dataset.pHelp) html += '<button type="button" class="btn" data-ir="' + esc(el.dataset.pHelp) + '">' + esc(el.dataset.pRot || 'Ver na lista') + '</button>';
+    helpPop = document.createElement('div'); helpPop.className = 'help-pop'; helpPop.setAttribute('role', 'dialog'); helpPop.innerHTML = html;
+    document.body.appendChild(helpPop);
+    var r = el.getBoundingClientRect(), w = helpPop.offsetWidth, h = helpPop.offsetHeight;
+    var x = Math.min(Math.max(8, r.left - 12), window.innerWidth - w - 8), y = r.bottom + 8;
+    if (y + h > window.innerHeight - 8) y = Math.max(8, r.top - h - 8);
+    helpPop.style.left = x + 'px'; helpPop.style.top = y + 'px';
+    helpDe = el; el.setAttribute('aria-expanded', 'true');
+    helpPop.addEventListener('click', function(e){
+      var b = e.target.closest('[data-ir]'); if (!b) return;
+      var alvo = $('fb-rapido').querySelector('[data-p="' + b.dataset.ir + '"]'); fecharAjuda();
+      if (alvo){ alvo.click(); $('list').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    });
+  }
+  document.addEventListener('mouseover', function(e){ var el = e.target.closest && e.target.closest('.help'); if (el) prepararAjuda(el); });
+  document.addEventListener('focusin', function(e){ var el = e.target.closest && e.target.closest('.help'); if (el) prepararAjuda(el); });
+  document.addEventListener('click', function(e){
+    var el = e.target.closest('.help');
+    if (el){ e.preventDefault(); e.stopPropagation(); if (helpDe === el) fecharAjuda(); else abrirAjuda(el); return; }
+    if (helpPop && !helpPop.contains(e.target)) fecharAjuda();
+  }, true);
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && helpPop){ var de = helpDe; fecharAjuda(); if (de) de.focus(); return; }
+    var el = e.target.closest && e.target.closest('.help');
+    if (el && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); if (helpDe === el) fecharAjuda(); else abrirAjuda(el); }
+  });
+  window.addEventListener('scroll', fecharAjuda, true);
+  window.addEventListener('resize', fecharAjuda);
+  Array.prototype.forEach.call(document.querySelectorAll('.help'), prepararAjuda);
 
   /* ---------- events ---------- */
   $('btn-novo').addEventListener('click', function(){ openForm(null); });

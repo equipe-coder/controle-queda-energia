@@ -121,7 +121,7 @@ async function chaveLiderHub(): Promise<string> {
 async function enviarTexto(key: string, conexao: string, numero: string, nome: string, texto: string) {
   let contato = '', usado = '', erro = 'Número não tem WhatsApp', semWhats = true;
   for (const n of variantes(numero)) {
-    const c = await lh(key, 'POST', '/v1/contacts', { connection: conexao, number: n, name: String(nome || '').slice(0, 80) });
+    const c = await lh(key, 'POST', '/v1/contacts', { connection: conexao, number: n, ...(String(nome || '').trim() ? { name: String(nome).trim().slice(0, 80) } : {}) });
     if (!c.ok) { erro = 'Cadastro no LiderHub falhou (' + c.status + '): ' + (c.dados?.message || ''); semWhats = false; continue; }
     if (c.dados?.exist && c.dados?.id) { contato = c.dados.id; usado = n; break; }
   }
@@ -183,6 +183,13 @@ async function carregarClientes(): Promise<Cli[]> {
   }
   return out;
 }
+// nome do contato no LiderHub: nome completo de quem é dono do número (os parentes avisados por ele não entram)
+function nomeDoNumero(clientes: Cli[], numero: string, reserva = ''): string {
+  const n = numeroBase(numero);
+  const donos = [...new Set(clientes.filter((c) => n && numeroBase(c.contato) === n).map((c) => String(c.nome || '').trim()).filter(Boolean))];
+  return (donos.length ? donos.join(' / ') : reserva).slice(0, 80);
+}
+
 // um aviso por número e por data de audiência (parentes com o mesmo telefone recebem uma mensagem só)
 function grupos(clientes: Cli[], hoje: string): Grupo[] {
   const m = new Map<string, Grupo>();
@@ -258,11 +265,12 @@ async function rodarRegua(): Promise<any> {
   const rodadas = Math.max(1, Math.ceil((18 - h) * 6));
   const cota = Math.min(restantes, Math.max(1, Math.round(restantes / rodadas + Math.random() * 0.8)), 4);
   const feitos = await jaFeitos();
-  const fila = pendentesNoDia(grupos(await carregarClientes(), hoje), feitos, hoje, cfg.inicio || hoje);
+  const todos = await carregarClientes();
+  const fila = pendentesNoDia(grupos(todos, hoje), feitos, hoje, cfg.inicio || hoje);
   const enviados = [];
   for (const { g, p } of fila.slice(0, cota)) {
     const modelo = (cfg.modelos && cfg.modelos[p.etapa]) || MODELOS[p.etapa];
-    const r = await enviarTexto(key, cfg.conexao, g.numero, g.clientes.map((c) => c.nome).join(' / '), texto(modelo, g, hoje));
+    const r = await enviarTexto(key, cfg.conexao, g.numero, nomeDoNumero(todos, g.numero, g.clientes.map((c) => c.nome).join(' / ')), texto(modelo, g, hoje));
     const status = r.ok ? 'enviado' : r.semWhats ? 'sem_whatsapp' : 'erro';
     await adm.from('avisos_log').insert({ numero: g.numero, clientes: g.clientes.map((c) => c.id), etapa: p.etapa, aud_data: g.aud, status, erro: r.ok ? null : r.erro });
     const marca = { reguaUltimo: { etapa: p.etapa, em: new Date().toISOString(), status } } as any;
@@ -345,9 +353,9 @@ Deno.serve(async (req) => {
     // diagnóstico: últimas mensagens da conversa com o número, com o status de entrega no LiderHub
     if (body.acao === 'mensagens') {
       const conexao = String(body.conexao || (await lerConfig()).conexao || '');
-      const out: any[] = [];
+      const out: any[] = [], nome = nomeDoNumero(await carregarClientes(), String(body.numero || ''));
       for (const n of variantes(String(body.numero || ''))) {
-        const c = await lh(key, 'POST', '/v1/contacts', { connection: conexao, number: n });
+        const c = await lh(key, 'POST', '/v1/contacts', { connection: conexao, number: n, ...(nome ? { name: nome } : {}) });
         const item: any = { numero: n, existe: !!c.dados?.exist, contato: c.dados?.id || null };
         if (c.dados?.id) {
           const m = await lh(key, 'GET', '/v1/message?limit=5&contact=' + c.dados.id);
@@ -356,19 +364,20 @@ Deno.serve(async (req) => {
         }
         out.push(item);
       }
-      return json({ conexao, resultado: out });
+      return json({ conexao, nome, resultado: out });
     }
 
     // teste: manda a etapa escolhida, com os dados do primeiro cliente da régua, para o número informado
     if (body.acao === 'regua-teste') {
       const cfg = await lerConfig(), hoje = hojeMao();
       const etapa = ETAPAS.includes(body.etapa) ? body.etapa : 'h5';
-      const gs = grupos(await carregarClientes(), hoje).sort((a, b) => a.aud.localeCompare(b.aud));
+      const todos = await carregarClientes();
+      const gs = grupos(todos, hoje).sort((a, b) => a.aud.localeCompare(b.aud));
       if (!gs.length) return json({ erro: 'Nenhum cliente com audiência futura e telefone.' }, 400);
       const conexao = String(body.conexao || cfg.conexao || '');
       if (!conexao) return json({ erro: 'Escolha o número que envia.' }, 400);
       const modelo = String(body.modelo || (cfg.modelos && cfg.modelos[etapa]) || MODELOS[etapa]);
-      const r = await enviarTexto(key, conexao, String(body.numero || ''), 'Teste', '[TESTE] ' + texto(modelo, gs[0], hoje));
+      const r = await enviarTexto(key, conexao, String(body.numero || ''), nomeDoNumero(todos, String(body.numero || '')), '[TESTE] ' + texto(modelo, gs[0], hoje));
       await adm.from('avisos_log').insert({ numero: numeroBase(body.numero) || String(body.numero || ''), etapa: 'teste', aud_data: null, status: r.ok ? 'enviado' : 'erro', erro: r.ok ? null : r.erro });
       return json(r);
     }
